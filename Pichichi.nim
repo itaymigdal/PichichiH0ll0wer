@@ -2,6 +2,7 @@ import os
 import utils
 import winim
 import ptr_math
+import syscalls
 import nimprotect
 import std/strutils
 from zip/zlib import uncompress
