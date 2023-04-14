@@ -1,4 +1,8 @@
-import winim/inc/windef
+# NtAllocateVirtualMemory -> CbZGEMmsvlfsZxPo
+# NtWriteVirtualMemory -> nVcnEsSyWXtfrjav
+# NtGetContextThread -> VzpSdkMDEGHOzTpB
+# NtSetContextThread -> IGyhziwCULdezDSq
+# NtResumeThread -> mAcJDfMgbUNFgsxu
 
 {.passC:"-masm=intel".}
 
@@ -182,13 +186,6 @@ EXTERN_C DWORD SW2_GetSyscallNumber(DWORD FunctionHash)
 }
 
 """.}
-
-# NtAllocateVirtualMemory -> CbZGEMmsvlfsZxPo
-# NtWriteVirtualMemory -> nVcnEsSyWXtfrjav
-# NtGetContextThread -> VzpSdkMDEGHOzTpB
-# NtSetContextThread -> IGyhziwCULdezDSq
-# NtResumeThread -> mAcJDfMgbUNFgsxu
-
 
 
 proc CbZGEMmsvlfsZxPo*(ProcessHandle: HANDLE, BaseAddress: PVOID, ZeroBits: ULONG, RegionSize: PSIZE_T, AllocationType: ULONG, Protect: ULONG): NTSTATUS {.asmNoStackFrame.} =
