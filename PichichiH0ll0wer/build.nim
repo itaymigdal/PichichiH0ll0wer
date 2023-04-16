@@ -35,9 +35,8 @@ var compileDllCmd = "nim compile --app:lib --nomain"    # dll format
 var compileExePath = " Loader/main.nim"                 # for source exe
 var compileDllPath = " Loader/dll.nim"                  # for source dll
 var compileOutExe = " -o:PichichiH0ll0wer.exe"          # for compiled exe
-var compileOutDll = " -o:PichichiH0ll0wer.dll"          # for compiles dll
+var compileOutDll = " -o:PichichiH0ll0wer.dll"          # for compiled dll
 var compileFlags = " --cpu=amd64"                       # for windows 64 bit
-compileFlags.add " -d=mingw"                            # for cross compiling from linux
 compileFlags.add " -d:release -d:strip --opt:size"      # for minimal size
 compileFlags.add " --passL:-Wl,--dynamicbase"           # for relocation table (needed for loaders)
 compileFlags.add " --benchmarkVM:on"                    # for NimProtect key randomization
