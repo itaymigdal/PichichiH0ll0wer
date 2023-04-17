@@ -1,6 +1,8 @@
 import osproc
 import argparse
+import ptr_math
 import strformat
+import winim/inc/[rpc, windef]
 from std/base64 import encode
 from zip/zlib import compress
 
@@ -74,7 +76,6 @@ compileFlags.add " --passL:-Wl,--dynamicbase"           # for relocation table (
 compileFlags.add " --benchmarkVM:on"                    # for NimProtect key randomization
 
 
-
 when isMainModule:
     # Define arguments
     var p = newParser:
@@ -115,8 +116,22 @@ when isMainModule:
         echo "[i] Use -h / --help\n"
         quit(1)
 
-    # Read & compress & encode exe payload
+    # Validate exe
     var peStr = readFile(pePath)
+    var peBytes = @(peStr.toOpenArrayByte(0, peStr.high))
+    var peBytesPtr = addr peBytes[0]
+    var peImageDosHeader = cast[ptr IMAGE_DOS_HEADER](peBytesPtr)
+    var peImageNtHeaders = cast[ptr IMAGE_NT_HEADERS64]((cast[ptr BYTE](peBytesPtr) + peImageDosHeader.e_lfanew))
+    var peImageMagic = cast[size_t](peImageNtHeaders.OptionalHeader.Magic)
+    var peImageSubsystem = cast[size_t](peImageNtHeaders.OptionalHeader.Subsystem)
+    if peImageMagic != 523 or not pePath.endsWith(".exe"):
+        echo "[-] Payload is not a valid x64 exe format"
+        quit(1)
+    elif peImageSubsystem != 3:
+        echo "[-] Tool works only with console subsystem"
+        quit(1)
+      
+    # Compress & encode exe payload
     var compressedPe = compress(peStr)
     var compressedBase64PE = encode(compressedPe)
 
