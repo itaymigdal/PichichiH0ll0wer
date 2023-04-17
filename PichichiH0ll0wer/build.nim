@@ -108,7 +108,7 @@ var sleepSeconds* = {sleepSeconds}
     elif injectionMethod == "2":
         compileFlags.add(" -d:hollownimline")
         #[ 
-        Loader crashes when using NimlineWhispers2 oas release compilation
+        Loader crashes when using NimlineWhispers2 as release compilation
         Should be compiled as debug or as release with --stacktrace:on --linetrace:on
         TODO - open issue
         ]#
