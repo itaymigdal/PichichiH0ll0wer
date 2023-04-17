@@ -88,7 +88,7 @@ when isMainModule:
         option("-s", "--sponsor", help="Sponsor path to hollow (default: self hollowing)")
         option("-a", "--args", help="Command line arguments to append to the hollowed process")
         option("-f", "--format", help="PE hollower format", choices = @["exe", "dll"], default=some("exe"))
-        option("-e", "--exportname", help="DLL export name (relevant only for Dll format)", default=some("DllRegisterServer"))
+        option("-e", "--export", help="DLL export name (relevant only for Dll format)", default=some("DllRegisterServer"))
         option("-t", "--sleep", help="Number of seconds to sleep before hollowing", default=some("0"))
         flag("-d", "--debug", help="Compile as debug instead of release (loader is verbose)")
     # Parse arguments
@@ -102,7 +102,7 @@ when isMainModule:
             sponsorPath = "protectString(\"" & opts.sponsor & "\")"        
         sponsorParams = opts.args
         outFormat = opts.format
-        outDllExportName = opts.exportname
+        outDllExportName = opts.export
         sleepSeconds = opts.sleep
         isDebug = opts.debug
     except ShortCircuit as err:
