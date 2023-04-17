@@ -41,3 +41,5 @@ proc main*() =
         sleepSeconds = sleepSeconds
     )
 
+when isMainModule:
+    main()
