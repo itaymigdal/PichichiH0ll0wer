@@ -126,12 +126,8 @@ when isMainModule:
     var peImageDosHeader = cast[ptr IMAGE_DOS_HEADER](peBytesPtr)
     var peImageNtHeaders = cast[ptr IMAGE_NT_HEADERS64]((cast[ptr BYTE](peBytesPtr) + peImageDosHeader.e_lfanew))
     var peImageMagic = cast[size_t](peImageNtHeaders.OptionalHeader.Magic)
-    var peImageSubsystem = cast[size_t](peImageNtHeaders.OptionalHeader.Subsystem)
     if peImageMagic != 523 or not pePath.endsWith(".exe"):
         echo "[-] Payload is not a valid x64 exe format"
-        quit(1)
-    elif peImageSubsystem != 3:
-        echo "[-] Tool works only with console subsystem"
         quit(1)
       
     # Compress & encode exe payload
