@@ -60,7 +60,6 @@ var sponsorPath: string
 var sponsorParams: string
 var outFormat: string
 var outDllExportName: string  
-var spoofedParentName: string
 var isBlockDlls: bool
 var sleepSeconds: string
 var isDebug: bool
@@ -92,7 +91,6 @@ when isMainModule:
         option("-a", "--args", help="Command line arguments to append to the hollowed process")
         option("-f", "--format", help="PE hollower format", choices = @["exe", "dll"], default=some("exe"))
         option("-e", "--export", help="DLL export name (relevant only for Dll format)", default=some("DllRegisterServer"))
-        option("-p", "--parent", help="Spoofed parent process name of the hollowed process (default: self)")
         flag("-b", "--block", help="Block unsigned Microsoft Dlls in the hollowed process")
         option("-t", "--sleep", help="Number of seconds to sleep before hollowing", default=some("0"))
         flag("-d", "--debug", help="Compile as debug instead of release (loader is verbose)")
@@ -108,7 +106,6 @@ when isMainModule:
         sponsorParams = opts.args
         outFormat = opts.format
         outDllExportName = opts.export
-        spoofedParentName = opts.parent
         isBlockDlls = opts.block
         sleepSeconds = opts.sleep
         isDebug = opts.debug
@@ -151,7 +148,6 @@ var compressedBase64PE* = protectString("{compressedBase64PE}")
 var sponsorPath* = {sponsorPath}
 var sponsorParams* = protectString(r" {sponsorParams}")
 var dllExportName* = protectString("{outDllExportName}") 
-var parentProcessName* = protectString("{spoofedParentName}") 
 var isBlockDlls* = {isBlockDlls}
 var sleepSeconds* = {sleepSeconds}
     """
