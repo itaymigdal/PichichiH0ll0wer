@@ -51,7 +51,7 @@ proc setDebugPrivilege*(): bool =
 
 
 # Heavily stolen from https://github.com/byt3bl33d3r/OffensiveNim/blob/master/src/blockdlls_acg_ppid_spoof_bin.nim
-proc createSuspendedExtendedProcess*(processCmd: cstring, parentProcessName: string, isBlockDlls: bool): ptr PROCESS_INFORMATION =
+proc createSuspendedExtendedProcess*(processCmd: cstring, parentProcessName: string, isBlockDlls: bool): PPROCESS_INFORMATION =
 
     # Some varaibles
     const PROCESS_CREATION_MITIGATION_POLICY_BLOCK_NON_MICROSOFT_BINARIES_ALWAYS_ON = 0x00000001 shl 44
