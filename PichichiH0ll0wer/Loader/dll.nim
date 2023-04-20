@@ -3,7 +3,7 @@ import params
 
 proc NimMain() {.cdecl, importc.}
 
-proc hi(): void {.stdcall, exportc, dynlib.} =
+proc DllRegisterServer(): void {.stdcall, exportc, dynlib.} =
     NimMain()
     main()
         
