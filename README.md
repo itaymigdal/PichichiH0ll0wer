@@ -61,6 +61,7 @@ Options:
   -t, --sleep=SLEEP          Number of seconds to sleep before hollowing (default: 0)
   -d, --debug                Compile as debug instead of release (loader is verbose)
 ```
+Also, check the [examples](/examples/).
 
 # Credits
 - [OffensiveNim](https://github.com/byt3bl33d3r/OffensiveNim)
