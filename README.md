@@ -20,6 +20,7 @@ I built PichichiH0ll0wer to learn and contribute, sure. but also because I'm qui
 Loading PEs might be less evasive, I know, but it's still efficient and more convenient than fighting to turn your PE payload into a shellcode each time (which not always works smoothly).
 Also, PichichiH0ll0wer has some features to protect your payload.
 I may add some more injection techniques and features in the future.
+Supports only x64 EXEs currently.
 
 ![](/assets/ui.PNG)
 
