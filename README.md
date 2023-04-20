@@ -28,6 +28,7 @@ Supports only x64 EXEs currently.
 - Configurable builder
 - Payload encrypted and compressed in the hollow loader
 - Simple hollowing (using Windows API) and direct syscalls hollowing using NimlineWhispers2
+- Hollower does not using the very suspicious call Nt/ZwUnmapViewOfSection
 - Can build EXE / DLL hollow loaders
 - Can block unsigned microsoft DLLs from being loaded to the hollowed process
 - Obfuscated sleep using useless calculations
