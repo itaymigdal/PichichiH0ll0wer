@@ -2,7 +2,7 @@
 # PichichiH0ll0wer
 
 <p align="center">
-  <img alt="Pichichi" src="/assets/pichichi.png">
+  <img alt="Pichichi" src="/assets/pichichi.PNG">
 </p>
 
 - [PichichiH0ll0wer](#pichichih0ll0wer)
@@ -21,7 +21,7 @@ Loading PEs might be less evasive, I know, but it's still efficient and more con
 Also, PichichiH0ll0wer has some features to protect your payload.
 I may add some more injection techniques and features at the future.
 
-![](/assets/ui.png)
+![](/assets/ui.PNG)
 
 # Features
 - Configurable builder
