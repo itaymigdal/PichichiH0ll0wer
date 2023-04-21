@@ -26,7 +26,7 @@ Supports only x64 EXEs currently.
 
 # Features
 - Configurable builder
-- Payload encrypted and compressed in the hollow loader
+- Payload encrypted and compressed (and optionally splitted) in the hollow loader
 - Simple hollowing (using Windows API) and direct syscalls hollowing using NimlineWhispers2
 - Hollower does not using the very suspicious call Nt/ZwUnmapViewOfSection
 - Can build EXE / DLL hollow loaders
@@ -59,6 +59,7 @@ Options:
   -f, --format=FORMAT        PE hollower format Possible values: [exe, dll] (default: exe)
   -e, --export=EXPORT        DLL export name (relevant only for Dll format) (default: DllRegisterServer)
   -b, --block                Block unsigned Microsoft Dlls in the hollowed process
+  -p, --split                Split and hide the payload blob in hollower (takes long to compile!)
   -t, --sleep=SLEEP          Number of seconds to sleep before hollowing (default: 0)
   -d, --debug                Compile as debug instead of release (loader is verbose)
 ```
