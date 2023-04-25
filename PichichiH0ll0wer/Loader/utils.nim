@@ -78,7 +78,7 @@ proc createSuspendedExtendedProcess*(processCmd: cstring, isBlockDlls: bool): PP
         addr si.StartupInfo,
         addr pi
     ) != TRUE:
-        when not defined(release): echo "[-] Could not create process"
+        when not defined(release): echo "[-] Could not create process: " & $GetLastError()
         quit()
 
     # Return updated process information
