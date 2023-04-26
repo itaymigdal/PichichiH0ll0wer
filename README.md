@@ -51,6 +51,7 @@ Arguments:
 
         1 - Simple hollowing
         2 - Syscalls hollowing (using NimlineWhispers2)
+        3 - Splitted hollowing using multiple processes and syscalls
 
 Options:
   -h, --help
