@@ -8,6 +8,7 @@
 - [PichichiH0ll0wer](#pichichih0ll0wer)
 - [About](#about)
 - [Features](#features)
+- [Injection methods](#injection-methods)
 - [Installation](#installation)
 - [Usage](#usage)
 - [Credits](#credits)
@@ -27,11 +28,15 @@ Supports only x64 EXEs currently.
 # Features
 - Configurable builder
 - Payload encrypted and compressed (and optionally splitted) in the hollow loader
-- Simple hollowing (using Windows API) and direct syscalls hollowing using NimlineWhispers2
 - Hollower does not using the very suspicious call Nt/ZwUnmapViewOfSection
 - Can build EXE / DLL hollow loaders
 - Can block unsigned microsoft DLLs from being loaded to the hollowed process
 - Obfuscated sleep using useless calculations
+
+# Injection methods
+1. Simple hollowing: just the usual stuff: VirtualAlloc -> WriteProcessMemory -> GetThreadContext -> SetThreadContext -> ResumeThread.
+2. Syscalls hollowing: using the great NimlineWhispers2 direct syscalls.
+3. Splitted hollowing: each step of method (1) is occuring in a seperate process with inherited handles, also uses NimlineWhispers2 syscalls. this method is more evasive, and known to bypass some EDR's.
 
 # Installation
 Built with Nim 1.6.12, should be run on Windows only.
@@ -51,6 +56,7 @@ Arguments:
 
         1 - Simple hollowing
         2 - Syscalls hollowing (using NimlineWhispers2)
+        3 - Splitted hollowing using multiple processes and syscalls
 
 Options:
   -h, --help

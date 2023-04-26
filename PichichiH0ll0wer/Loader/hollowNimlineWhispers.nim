@@ -1,6 +1,6 @@
 import winim
 import ptr_math
-import std/strutils
+import strutils
 
 include syscalls
 
