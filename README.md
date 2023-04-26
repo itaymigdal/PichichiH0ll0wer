@@ -36,7 +36,7 @@ Supports only x64 EXEs currently.
 # Injection methods
 1. Simple hollowing: just the usual stuff: VirtualAlloc -> WriteProcessMemory -> GetThreadContext -> SetThreadContext -> ResumeThread.
 2. Syscalls hollowing: using the great NimlineWhispers2 direct syscalls.
-3. Splitted hollowing: each step of method (1) is occuring in a seperate process with inherited handles, also uses NimlineWhispers2 syscalls. this method is more evasive, and known to bypass some EDR's.
+3. Splitted hollowing: each step of method (2) is occuring in a seperate process with inherited handles, also uses NimlineWhispers2 syscalls. this method is more evasive, and known to bypass some EDR's.
 ![](/assets/3_pstree.PNG)
 
 # Installation
