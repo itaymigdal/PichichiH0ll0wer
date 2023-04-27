@@ -146,19 +146,6 @@ proc createProcessWorker(arg: string): PPROCESS_INFORMATION =
     return addr pi
 
 
-proc extractProcessInfo(processInfoAddress: PPROCESS_INFORMATION): (HANDLE, HANDLE, DWORD, DWORD) =
-    #[ 
-    Only god knows why I needed that function, 
-    only succeeded to extract process info struct 
-    successfully when I passed it thru another function 
-    ]#
-    let sponsorProcessHandle = processInfoAddress.hProcess
-    let sponsorThreadHandle = processInfoAddress.hThread
-    let sponsorPid = processInfoAddress.dwProcessId
-    let sponsorTid = processInfoAddress.dwThreadId
-    return (sponsorProcessHandle, sponsorThreadHandle, sponsorPid, sponsorTid)
-
-
 proc manager(sponsorProcessHandle, sponsorThreadHandle: HANDLE, peImageImageBase: PVOID): bool =
     
     # Vars to check childen processes
