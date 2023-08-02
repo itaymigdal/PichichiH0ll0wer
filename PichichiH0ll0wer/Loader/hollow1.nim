@@ -3,7 +3,7 @@ import ptr_math
 import std/strutils
 
 
-proc simpleHollow*(peStr: string, processInfoAddress: PPROCESS_INFORMATION): bool =
+proc hollow1*(peStr: string, processInfoAddress: PPROCESS_INFORMATION): bool =
 
     # Parse PE
     var peBytes = @(peStr.toOpenArrayByte(0, peStr.high))
