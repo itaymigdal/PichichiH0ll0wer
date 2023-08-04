@@ -28,6 +28,7 @@ Supports only x64 EXEs currently.
 # Features
 - Configurable builder
 - Payload encrypted and compressed (and optionally splitted) in the hollow loader
+- Supports direct and indirect system calls
 - Hollower does not use the very suspicious call Nt/ZwUnmapViewOfSection
 - Can build EXE / DLL hollow loaders
 - Can block unsigned microsoft DLLs from being loaded to the hollowed process
@@ -62,9 +63,11 @@ Arguments:
   injection_method Injection method
 
         1 - Simple hollowing
-        2 - Syscalls hollowing
-        3 - Splitted hollowing using multiple processes
-        4 - Splitted hollowing using multiple processes and syscalls
+        2 - Direct syscalls hollowing
+        3 - Indirect syscalls hollowing
+        4 - Splitted hollowing using multiple processes
+        5 - Splitted hollowing using multiple processes and direct syscalls
+        6 - Splitted hollowing using multiple processes and indirect syscalls
 
 Options:
   -h, --help
