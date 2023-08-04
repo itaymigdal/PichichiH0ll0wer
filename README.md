@@ -31,6 +31,7 @@ Supports only x64 EXEs currently.
 - Hollower does not use the very suspicious call Nt/ZwUnmapViewOfSection
 - Can build EXE / DLL hollow loaders
 - Can block unsigned microsoft DLLs from being loaded to the hollowed process
+- Supports anti-debug techniques with the ability to die or to execute useless calculations ('troll' mode)
 - Obfuscated sleep using useless calculations
 
 # Injection methods
@@ -41,6 +42,7 @@ Supports only x64 EXEs currently.
 > Method 3 and 4 are more evasive, and known to bypass some EDR's.
 
 Example of splitted hollowing of `cscript.exe` with `cmd.exe` that spawns `whoami.exe`:
+
 ![](/assets/splitted_pstree.PNG)
 
 # Installation
@@ -73,6 +75,8 @@ Options:
   -b, --block                Block unsigned Microsoft Dlls in the hollowed process
   -p, --split                Split and hide the payload blob in hollower (takes long to compile!)
   -t, --sleep=SLEEP          Number of seconds to sleep before hollowing (default: 0)
+  -g, --anti-debug=ANTI_DEBUG
+                             Action to perform upon debugger detection Possible values: [none, die, troll] (default: none)
   -d, --debug                Compile as debug instead of release (loader is verbose)
 ```
 Also, check the [examples](/examples/).
