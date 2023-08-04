@@ -98,7 +98,7 @@ when isMainModule:
         flag("-b", "--block", help="Block unsigned Microsoft Dlls in the hollowed process")
         flag("-p", "--split", help="Split and hide the payload blob in hollower (takes long to compile!)")
         option("-t", "--sleep", help="Number of seconds to sleep before hollowing", default=some("0"))
-        option("-g", "--anti-debug", help="Action to perform upon debugger detection", default=some("none"))
+        option("-g", "--anti-debug", help="Action to perform upon debugger detection", choices = @["none", "die", "troll"], default=some("none"))
         flag("-d", "--debug", help="Compile as debug instead of release (loader is verbose)")
     # Parse arguments
     try:
