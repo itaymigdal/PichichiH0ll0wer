@@ -96,8 +96,8 @@ proc sleepUselessCalculations*(secondsToSleep: int) =
     randomize()
     var startTime = now()
     while (now() - startTime).inSeconds < secondsToSleep:
-        for _ in countdown(rand(179), 17):
-            x = rand(rand(rand(511.888)))
-            y = rand(rand(6313.9999))
-            z = rand(836.3214789)
+        for _ in countdown(rand(5619989), 87):
+            x = rand(rand(rand(511.888)) mod  9811)
+            y = rand(rand(6313.9999)) + log2(cos(1.87 * PI)) 
+            z = rand(836.3214789 - x mod y) 
             y = sqrt(float(x * y + 37)) * sqrt(float(x / (y + 1111))) + exp(float(x * z))
