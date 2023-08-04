@@ -37,10 +37,11 @@ Supports only x64 EXEs currently.
 
 # Injection methods
 1. Simple hollowing: just the usual stuff: VirtualAlloc -> WriteProcessMemory -> GetThreadContext -> SetThreadContext -> ResumeThread.
-2. Syscalls hollowing: using the great NimlineWhispers2 direct syscalls.
-3. Splitted hollowing: each step of method (1) is occurring in a separate process with inherited handles.
-4. Splitted hollowing: each step of method (2) is occurring in a separate process with inherited handles, also uses NimlineWhispers2 syscalls. 
-> Method 3 and 4 are more evasive, and known to bypass some EDR's.
+2. Direct syscalls hollowing: using the great NimlineWhispers2.
+3. Indirect syscalls hollowing: using the great NimlineWhispers3.
+4. Splitted hollowing: each step of method (1) is occurring in a separate process with inherited handles.
+5. Splitted hollowing: each step of method (2) is occurring in a separate process with inherited handles.
+6. Splitted hollowing: each step of method (3) is occurring in a separate process with inherited handles.
 
 Example of splitted hollowing of `cscript.exe` with `cmd.exe` that spawns `whoami.exe`:
 

