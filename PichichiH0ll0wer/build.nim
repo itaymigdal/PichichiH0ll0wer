@@ -77,6 +77,7 @@ var compileFlags = " --cpu=amd64"                       # for windows 64 bit
 compileFlags.add " -d:release -d:strip --opt:none"      # for minimal size   # --opt:size casuing runtime erros here!
 compileFlags.add " --passL:-Wl,--dynamicbase"           # for relocation table (needed for loaders)
 compileFlags.add " --benchmarkVM:on"                    # for NimProtect key randomization
+compileFlags.add " --maxLoopIterationsVM:100000000"     # for RC4'ing big files
 
 
 when isMainModule:
