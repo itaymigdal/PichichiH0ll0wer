@@ -50,7 +50,7 @@ Example of splitted hollowing of `cscript.exe` with `cmd.exe` that spawns `whoam
 # Installation
 Built with Nim 1.6.12, should be run on Windows only.
 ```
-nimble install winim ptr_math nimprotect zip argparse
+nimble install winim ptr_math nimprotect supersnappy argparse
 ```
 
 # Usage

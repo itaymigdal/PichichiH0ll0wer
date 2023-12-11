@@ -2,9 +2,9 @@ import osproc
 import argparse
 import ptr_math
 import strformat
+import supersnappy
 import winim/inc/[rpc, windef]
 from std/base64 import encode
-from zip/zlib import compress
 
 # YOU HAVE TO HAVE A TOOL BANNER
 const pichichiBanner = """
