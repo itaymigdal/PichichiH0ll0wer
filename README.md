@@ -34,6 +34,7 @@ Supports only x64 EXEs currently.
 - Can block unsigned microsoft DLLs from being loaded to the hollowed process
 - Supports anti-debug techniques with the ability to die or to execute useless calculations ('troll' mode)
 - Obfuscated sleep using useless calculations
+- Support execution within VEH
 
 # Injection methods
 1. Simple hollowing: just the usual stuff: VirtualAlloc -> WriteProcessMemory -> GetThreadContext -> SetThreadContext -> ResumeThread.
@@ -81,6 +82,7 @@ Options:
   -t, --sleep=SLEEP          Number of seconds to sleep before hollowing (default: 0)
   -g, --anti-debug=ANTI_DEBUG
                              Action to perform upon debugger detection Possible values: [none, die, troll] (default: none)
+  -v, --veh                  Hollow will occur within VEH
   -d, --debug                Compile as debug instead of release (loader is verbose)
 ```
 Also, check the [examples](/examples/).
