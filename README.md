@@ -90,6 +90,7 @@ Also, check the [examples](/examples/).
 # Credits
 - [OffensiveNim](https://github.com/byt3bl33d3r/OffensiveNim)
 - [NimlineWhispers2](https://github.com/ajpc500/NimlineWhispers2)
+- [NimlineWhispers3](https://github.com/klezVirus/NimlineWhispers3)
 - [Nim-RunPE](https://github.com/S3cur3Th1sSh1t/Nim-RunPE)
 - [Hasherezade code and notes](https://github.com/hasherezade/libpeconv/tree/master/run_pe)
 
