@@ -28,6 +28,7 @@ Supports only x64 EXEs currently.
 # Features
 - Configurable builder
 - Payload encrypted and compressed (and optionally splitted) in the hollow loader
+- Supports splitted injection using multiple processes
 - Supports direct and indirect system calls
 - Hollower does not use the very suspicious call Nt/ZwUnmapViewOfSection
 - Can build EXE / DLL hollow loaders
