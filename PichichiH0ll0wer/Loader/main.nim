@@ -90,9 +90,14 @@ proc wrap_execute() =
     quit(0)
 
 
+proc wrap_execute_veh(pExceptInfo: PEXCEPTION_POINTERS): LONG =
+    if (pExceptInfo.ExceptionRecord.ExceptionCode == cast[DWORD](0xC0000094)): # STATUS_INTEGER_DIVIDE_BY_ZERO 
+        wrap_execute()
+
+
 proc main*() =
     if isVeh:
-        AddVectoredExceptionHandler(1, cast[PVECTORED_EXCEPTION_HANDLER](wrap_execute))
+        AddVectoredExceptionHandler(1, cast[PVECTORED_EXCEPTION_HANDLER](wrap_execute_veh))
         raiseVEH()
     else:
         wrap_execute()
