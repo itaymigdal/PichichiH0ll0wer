@@ -35,7 +35,7 @@ Supports only x64 EXEs currently.
 - Supports anti-debug techniques with the ability to die or to execute useless calculations ('troll' mode)
 - Obfuscated sleep using useless calculations
 - Supports execution within VEH
-- Supports command line key to enable execution
+- Supports command line Rc4 key to decrypt the payload
 
 # Injection methods
 1. Simple hollowing: just the usual stuff: VirtualAlloc -> WriteProcessMemory -> GetThreadContext -> SetThreadContext -> ResumeThread.
@@ -83,7 +83,7 @@ Options:
   -t, --sleep=SLEEP          Number of seconds to sleep before hollowing (default: 0)
   -g, --anti-debug=ANTI_DEBUG
                              Action to perform upon debugger detection Possible values: [none, die, troll] (default: none)
-  -k, --key=KEY              Hollower will run only when this supplied key is a command line argument (default: )
+  -k, --key=KEY              RC4 key to [en/de]crypt the payload (supplied as a command line argument to the hollower)
   -v, --veh                  Hollow will occur within VEH
   -d, --debug                Compile as debug instead of release (loader is verbose)
 ```
