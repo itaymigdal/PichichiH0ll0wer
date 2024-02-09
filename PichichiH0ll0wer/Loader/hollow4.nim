@@ -115,7 +115,9 @@ proc setThreadProcess(
         addr context
     ) != 0:
         quit(1)
-
+    
+    # success        
+    quit(0)
 
 proc resumeThreadProcess(
     threadHandle: Handle
@@ -132,6 +134,12 @@ proc resumeThreadProcess(
 proc createProcessWorker(arg: string): PPROCESS_INFORMATION =
 
     var processCmd = getAppFilename() & " " & arg
+
+    # Supply RC4 key if needed
+    for i in commandLineParams():
+        if i.startsWith(protectString("-K:")):
+            processCmd = processCmd & " " & i
+
     var si: STARTUPINFOA
     var pi: PROCESS_INFORMATION
     if CreateProcessA(
@@ -140,7 +148,7 @@ proc createProcessWorker(arg: string): PPROCESS_INFORMATION =
         NULL,
         NULL, 
         TRUE,
-        0, # CREATE_SUSPENDED,
+        0,
         NULL,
         NULL,
         addr si,

