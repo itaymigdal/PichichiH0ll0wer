@@ -101,3 +101,8 @@ proc sleepUselessCalculations*(secondsToSleep: int) =
             y = rand(rand(6313.9999)) + log2(cos(1.87 * PI)) 
             z = rand(836.3214789 - x mod y) 
             y = sqrt(float(x * y + 37)) * sqrt(float(x / (y + 1111))) + exp(float(x * z))
+
+
+proc toString*(bytes: openarray[byte]): string =
+    result = newString(bytes.len)
+    copyMem(result[0].addr, bytes[0].unsafeAddr, bytes.len)

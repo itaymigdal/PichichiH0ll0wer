@@ -3,16 +3,12 @@ import winim
 import strutils
 import ptr_math
 import nimprotect
-
-when defined(hollow5):
-    include syscalls2
-when defined(hollow6):
-    include syscalls3
+include reloc
 
 # Manager           -> -M
 # Allocate          -> -A:<sponsor-process-handle>
-# Write             -> -W:<sponsor-process-handle>
-# Thread context    -> -T:<sponsor-thread-handle>
+# Write             -> -W:<sponsor-process-handle> -N:<new-base-address>
+# Thread context    -> -T:<sponsor-thread-handle> -N:<new-base-address>
 # Resume            -> -R:<sponsor-thread-handle>
 
 when defined(hollow4):
