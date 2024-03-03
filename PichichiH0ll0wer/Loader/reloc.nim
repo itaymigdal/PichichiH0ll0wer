@@ -31,7 +31,7 @@ proc applyRelocations*(peBytesPtr: ptr byte, newImageBaseAddress: LPVOID, sponso
     var dwDelta = cast[DWORD](cast[int](newImageBaseAddress) - cast[int](peImageImageBase)) 
     if dwDelta == 0:
         return true
-    for i in countUp(0, cast[int](peImageNtHeaders.FileHeader.NumberOfSections)):
+    for i in countUp(0, cast[int](peImageNtHeaders.FileHeader.NumberOfSections) - 1):
         if toString(peImageSectionsHeader[i].Name) == protectString(".reloc"):
             var dwRelocAddr = peImageSectionsHeader[i].PointerToRawData
             var dwOffset: DWORD = 0

