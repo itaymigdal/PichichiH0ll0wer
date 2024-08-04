@@ -106,3 +106,9 @@ proc sleepUselessCalculations*(secondsToSleep: int) =
 proc toString*(bytes: openarray[byte]): string =
     result = newString(bytes.len)
     copyMem(result[0].addr, bytes[0].unsafeAddr, bytes.len)
+
+
+proc onFail*(targetHandle: HANDLE) =
+    when not defined(release): echo "[*] Quiting on failure :("
+    TerminateProcess(targetHandle, 0)
+    quit(1)

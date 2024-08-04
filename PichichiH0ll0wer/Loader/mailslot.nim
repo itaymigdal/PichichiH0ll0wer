@@ -6,7 +6,7 @@ import nimprotect
 proc createMailslot*(mailslotPath: string): HANDLE =
     let mailslotHandle = CreateMailslot(mailslotPath, 0, 0, nil)
     if mailslotHandle == INVALID_HANDLE_VALUE:
-        echo protectString("[-] Failed to create mailslot: "), GetLastError()
+        if not defined(release): echo protectString("[-] Failed to create mailslot: "), GetLastError()
         return 0
     return mailslotHandle
 
@@ -23,7 +23,7 @@ proc readMailslot*(mailslotHandle: HANDLE): string =
         nil
         )
     if bytesRead == 0:
-        echo protectString("[-] Failed to read from mailslot: "), GetLastError()
+        if not defined(release): echo protectString("[-] Failed to read from mailslot: "), GetLastError()
         return ""
     return messageBuffer[0 .. int(bytesRead)-1].join("")
 
@@ -32,7 +32,7 @@ proc writeMailslot*(mailslotPath: string, message: string): bool =
     # Write to the mailslot
     let mailslotHandle = CreateFile(mailslotPath, GENERIC_WRITE, FILE_SHARE_READ, nil, OPEN_EXISTING, 0, 0)
     if mailslotHandle == INVALID_HANDLE_VALUE:
-        echo protectString("[-] Failed to open mailslot for writing: "), GetLastError()
+        if not defined(release): echo protectString("[-] Failed to open mailslot for writing: "), GetLastError()
         return false
     var lpNumberOfBytesWritten: DWORD
     discard WriteFile(
@@ -43,13 +43,13 @@ proc writeMailslot*(mailslotPath: string, message: string): bool =
         nil
         )
     if lpNumberOfBytesWritten == 0:
-        echo protectString("[-] Failed to write to mailslot: "), GetLastError()
+        if not defined(release): echo protectString("[-] Failed to write to mailslot: "), GetLastError()
         return false
     CloseHandle(mailslotHandle)
     return true
 
 
-## Exmample ##
+## Example ##
 when isMainModule:
 
     const mailslotPath = "\\\\.\\mailslot\\example_mailslot"

