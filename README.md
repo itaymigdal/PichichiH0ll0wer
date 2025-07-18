@@ -95,5 +95,3 @@ Also, check the [examples](/examples/).
 - [NimlineWhispers3](https://github.com/klezVirus/NimlineWhispers3)
 - [Nim-RunPE](https://github.com/S3cur3Th1sSh1t/Nim-RunPE)
 - [Hasherezade code and notes](https://github.com/hasherezade/libpeconv/tree/master/run_pe)
-
-  

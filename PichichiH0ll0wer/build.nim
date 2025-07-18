@@ -141,6 +141,10 @@ when isMainModule:
         echo "[i] Use -h / --help\n"
         quit(1)
 
+    if outFormat == "dll" and isDebug:
+        echo "[-] Dll payload cannot print messages"
+        quit(1)
+
     # Validate exe
     var peStr = readFile(pePath)
     var peBytes = @(peStr.toOpenArrayByte(0, peStr.high))
@@ -152,14 +156,8 @@ when isMainModule:
         echo "[-] Payload is not a valid x64 PE"
         quit(1)
 
-    # Validate params
-    if injectionMethod in ["4", "5", "6"] and outFormat == "dll":
-        echo "[-] Splitted hollowing method isn't compatible with dll format"
-        quit(1)
-
     # Compress & encode exe payload
     var compressedPe = compress(peStr)
-
 
     # (Encrypt and) Encode payload if key supplied
     if key != "":
@@ -235,7 +233,7 @@ proc {outDllExportName}(): void {{.stdcall, exportc, dynlib.}} =
     echo "[*] Compiling Loader: " & compileCmd
     var res = execCmdEx(compileCmd, options={poStdErrToStdOut})
     if res[1] == 0:
-        echo "[+] Compiled successfully"
+        echo "[+] Compiled successfully" 
         if injectionMethod in ["4", "5", "6"]:
             echo "[i] Run the hollower with '-M' argument"
         if key != "":
