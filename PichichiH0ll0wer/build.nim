@@ -97,9 +97,9 @@ when isMainModule:
         1 - Simple hollowing
         2 - Direct syscalls hollowing
         3 - Indirect syscalls hollowing
-        4 - Splitted hollowing using multiple processes
-        5 - Splitted hollowing using multiple processes and direct syscalls
-        6 - Splitted hollowing using multiple processes and indirect syscalls
+        4 - Split hollowing using multiple processes
+        5 - Split hollowing using multiple processes and direct syscalls
+        6 - Split hollowing using multiple processes and indirect syscalls
         """)
         option("-s", "--sponsor", help="Sponsor path to hollow (default: self hollowing)")
         option("-a", "--args", help="Command line arguments to append to the hollowed process")

@@ -26,7 +26,7 @@ proc createSuspendedExtendedProcess*(processCmd: cstring, isBlockDlls: bool): PP
     InitializeProcThreadAttributeList(NULL, 2, 0, addr lpSize)
     si.lpAttributeList = cast[LPPROC_THREAD_ATTRIBUTE_LIST](HeapAlloc(GetProcessHeap(), 0, lpSize))
     InitializeProcThreadAttributeList(si.lpAttributeList, 2, 0, addr lpSize)
-    # Needed for handle inheritance in splitted hollow
+    # Needed for handle inheritance in split hollow
     when defined(hollow4) or defined(hollow5) or defined(hollow6):
         ps.bInheritHandle = true
         ts.bInheritHandle = true

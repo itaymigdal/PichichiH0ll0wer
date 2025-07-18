@@ -26,8 +26,8 @@ Supports only x64 EXEs.
 
 # Features
 - Configurable builder
-- Payload encrypted and compressed (and optionally splitted) in the hollow loader
-- Supports splitted injection using multiple processes
+- Payload encrypted and compressed (and optionally split) in the hollow loader
+- Supports split injection using multiple processes
 - Supports direct and indirect system calls
 - Hollower does not use the very suspicious call Nt/ZwUnmapViewOfSection
 - Can build EXE / DLL hollow loaders
@@ -41,13 +41,13 @@ Supports only x64 EXEs.
 1. Simple hollowing: just the usual stuff: VirtualAlloc -> WriteProcessMemory -> GetThreadContext -> SetThreadContext -> ResumeThread.
 2. Direct syscalls hollowing: using the great NimlineWhispers2.
 3. Indirect syscalls hollowing: using the great NimlineWhispers3.
-4. Splitted hollowing: each step of method (1) is occurring in a separate process with inherited handles.
-5. Splitted hollowing: each step of method (2) is occurring in a separate process with inherited handles.
-6. Splitted hollowing: each step of method (3) is occurring in a separate process with inherited handles.
+4. Split hollowing: each step of method (1) is occurring in a separate process with inherited handles.
+5. Split hollowing: each step of method (2) is occurring in a separate process with inherited handles.
+6. Split hollowing: each step of method (3) is occurring in a separate process with inherited handles.
 
-Example of splitted hollowing of `cscript.exe` with `cmd.exe` that spawns `whoami.exe`:
+Example of split hollowing of `cscript.exe` with `cmd.exe` that spawns `whoami.exe`:
 
-![](/assets/splitted_pstree.PNG)
+![](/assets/split_pstree.PNG)
 
 # Installation
 Built with Nim 1.6.12, should be run on Windows only.
@@ -68,9 +68,9 @@ Arguments:
         1 - Simple hollowing
         2 - Direct syscalls hollowing
         3 - Indirect syscalls hollowing
-        4 - Splitted hollowing using multiple processes
-        5 - Splitted hollowing using multiple processes and direct syscalls
-        6 - Splitted hollowing using multiple processes and indirect syscalls
+        4 - Split hollowing using multiple processes
+        5 - Split hollowing using multiple processes and direct syscalls
+        6 - Split hollowing using multiple processes and indirect syscalls
 
 Options:
   -h, --help
