@@ -65,6 +65,7 @@ var outDllExportName: string
 var isBlockDlls: bool
 var isSplit: bool
 var sleepSeconds: string
+var sleepBetweenSteps: string
 var antiDebugg: string
 var key: string
 var isVeh: bool
@@ -108,6 +109,7 @@ when isMainModule:
         flag("-b", "--block", help="Block unsigned Microsoft Dlls in the hollowed process")
         flag("-p", "--split", help="Split and hide the payload blob in hollower (takes long to compile!)")
         option("-t", "--sleep", help="Number of seconds to sleep before hollowing", default=some("0"))
+        option("-z", "--sleep-step", help="Number of seconds to sleep between each step (x4)", default=some("0"))
         option("-g", "--anti-debug", help="Action to perform upon debugger detection", choices = @["none", "die", "troll"], default=some("none"))
         option("-k", "--key", help="RC4 key to [en/de]crypt the payload (supplied as a command line argument to the hollower)", default=some(""))
         flag("-v", "--veh", help="Hollow will occur within VEH")
@@ -127,6 +129,7 @@ when isMainModule:
         isBlockDlls = opts.block
         isSplit = opts.split
         sleepSeconds = opts.sleep
+        sleepBetweenSteps = opts.sleep_step
         antiDebugg = opts.anti_debug
         key = opts.key
         isVeh = opts.veh
@@ -185,6 +188,7 @@ var dllExportName* = protectString("{outDllExportName}")
 var isBlockDlls* = {isBlockDlls}
 var antiDebugAction* = protectString("{antiDebugg}")
 var sleepSeconds* = {sleepSeconds}
+var sleepBetweenSteps* = {sleepBetweenSteps}
 var isVeh* = {isVeh}
 var isEncrypted* = {isEncrypted}
     """

